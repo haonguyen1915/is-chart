@@ -1,0 +1,8 @@
+helm:
+  parameters:
+  - name: poly.apps.terminal.image.repository
+    value: registry.ftech.ai/public/terminal
+    forcestring: true
+  - name: poly.apps.terminal.image.tag
+    value: dev-2023-03-08_10-23-20-ec94e947
+    forcestring: true

@@ -1,0 +1,9 @@
+dependencies:
+- name: gatekeeper
+  repository: https://open-policy-agent.github.io/gatekeeper/charts
+  version: 3.11.0
+- name: gatekeeper-constraints
+  repository: file://charts/gatekeeper-constraints
+  version: 0.1.0
+digest: sha256:b5a31372bc495e643378145612f8738b7f6c9ba221f7f4ea8fcca8a6d042bbfb
+generated: "2023-04-10T17:44:25.481131162+07:00"

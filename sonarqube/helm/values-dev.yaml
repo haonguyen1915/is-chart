@@ -1,0 +1,14 @@
+sonarqube:
+  podLabels:
+    owner: IS
+    pic: IS.tiennh
+  
+ingress:
+  enabled: true
+  hosts:
+    - name: sonarqube.dev.ftech.ai
+      path: /
+      pathType: Prefix
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "1000m"

@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: terminal
+  namespace: argocd
+spec:
+  roles:
+    - name: terminal-admin
+      policies:
+      - p, proj:terminal:terminal-admin, applications, get, terminal/*, allow
+      - p, proj:terminal:terminal-admin, logs, get, terminal/*, allow
+      - p, proj:terminal:terminal-admin, applications, sync, terminal/*, allow
+      - p, proj:terminal:terminal-admin, applications, update, terminal/*, allow
+      - p, proj:terminal:terminal-admin, exec, create, terminal/*, allow
+      groups:
+      - devops/is-intern-devops
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: terminal
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

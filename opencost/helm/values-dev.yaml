@@ -1,0 +1,321 @@
+opencost:
+  # -- Overwrite the default name of the chart
+  nameOverride: ""
+  # -- Overwrite all resources name created by the chart
+  fullnameOverride: ""
+
+  # -- List of secret names to use for pulling the images
+  imagePullSecrets: []
+
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # --  Annotations to add to the service account
+    annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/eksctl-opencost
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+    # -- Whether pods running as this service account should have an API token automatically mounted
+    automountServiceAccountToken: true
+
+  # --  Annotations to add to the all the resources
+  annotations: {}
+  # --  Annotations to add to the OpenCost Pod
+  podAnnotations: {}
+  # --  Annotations to add to the Secret
+  secretAnnotations: {}
+  # --  Labels to add to the OpenCost Pod
+  podLabels: {}
+  # --  Pod priority
+  priorityClassName: ~
+
+  # -- Holds pod-level security attributes and common container settings
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  service:
+    enabled: true
+    # --  Annotations to add to the service
+    annotations: {}
+    # --  Labels to add to the service account
+    labels: {}
+    # --  Kubernetes Service type
+    type: ClusterIP
+
+  # Create cluster role policies
+  rbac:
+    enabled: true
+
+  opencost:
+    exporter:
+      # -- The GCP Pricing API requires a key. This is supplied just for evaluation.
+      cloudProviderApiKey: ""
+      # -- Default cluster ID to use if cluster_id is not set in Prometheus metrics.
+      defaultClusterId: 'default-cluster'
+      image:
+        # -- Exporter container image registry
+        registry: quay.io
+        # -- Exporter container image name
+        repository: kubecost1/kubecost-cost-model
+        # -- Exporter container image tag
+        # @default -- `""` (use appVersion in Chart.yaml)
+        tag: ""
+        # -- Exporter container image pull policy
+        pullPolicy: IfNotPresent
+      # -- Number of OpenCost replicas to run
+      replicas: 1
+      resources:
+        # -- CPU/Memory resource requests
+        requests:
+          cpu: '10m'
+          memory: '55Mi'
+        # -- CPU/Memory resource limits
+        limits:
+          cpu: '999m'
+          memory: '1Gi'
+      # Liveness probe configuration
+      livenessProbe:
+        # -- Whether probe is enabled
+        enabled: true
+        # -- Number of seconds before probe is initiated
+        initialDelaySeconds: 120
+        # -- Probe frequency in seconds
+        periodSeconds: 10
+        # -- Number of failures for probe to be considered failed
+        failureThreshold: 3
+      # Readiness probe configuration
+      readinessProbe:
+        # -- Whether probe is enabled
+        enabled: true
+        # -- Number of seconds before probe is initiated
+        initialDelaySeconds: 120
+        # -- Probe frequency in seconds
+        periodSeconds: 10
+        # -- Number of failures for probe to be considered failed
+        failureThreshold: 3
+      # -- The security options the container should be run with
+      securityContext: {}
+        # capabilities:
+        #   drop:
+        #   - ALL
+        # readOnlyRootFilesystem: true
+        # runAsNonRoot: true
+        # runAsUser: 1000
+
+      # Path of CSV file
+      csv_path: ""
+
+      # Persistent volume claim for storing the data. eg: csv file
+      persistence:
+        enabled: false
+        # -- Annotations for persistent volume
+        annotations: {}
+        # -- Access mode for persistent volume
+        accessMode: ""
+        # -- Storage class for persistent volume
+        storageClass: ""
+        # -- Size for persistent volume
+        size: ""
+
+      aws:
+        # -- AWS secret access key
+        secret_access_key: ""
+        # -- AWS secret key id
+        access_key_id: ""
+      # -- A list of volume mounts to be added to the pod
+      extraVolumeMounts: []
+      # -- List of additional environment variables to set in the container
+      env: []
+      # -- Any extra environment variables you would like to pass on to the pod
+      extraEnv: {}
+        # FOO: BAR
+    customPricing:
+      # -- Enables custom pricing for on-premise setup.
+      enabled: true
+      configmapName: custom-pricing-model
+      # -- Path for the pricing configuration.
+      configPath: /tmp/custom-config
+      # -- Configures the pricing model provided in the values file.
+      createConfigmap: true
+      # -- More information about these values here: https://www.opencost.io/docs/configuration/on-prem#custom-pricing-using-the-opencost-helm-chart
+      costModel:
+        description: Modified prices based on your internal pricing
+        CPU: 1.25
+        spotCPU: 0.006655
+        RAM: 0.50
+        spotRAM: 0.000892
+        GPU: 0.95
+        storage: 0.25
+        zoneNetworkEgress: 0.01
+        regionNetworkEgress: 0.01
+        internetNetworkEgress: 0.12
+
+
+    metrics:
+      serviceMonitor:
+        # -- Create ServiceMonitor resource for scraping metrics using PrometheusOperator
+        enabled: false
+        # -- Additional labels to add to the ServiceMonitor
+        additionalLabels: {}
+        # -- Specify if the ServiceMonitor will be deployed into a different namespace (blank deploys into same namespace as chart)
+        namespace: ""
+        # -- Interval at which metrics should be scraped
+        scrapeInterval: 30s
+        # -- Timeout after which the scrape is ended
+        scrapeTimeout: 10s
+        # -- HonorLabels chooses the metric's labels on collisions with target labels
+        honorLabels: true
+        # -- RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds relabelings for a few standard Kubernetes fields
+        relabelings: []
+        # -- MetricRelabelConfigs to apply to samples before ingestion
+        metricRelabelings: []
+
+    prometheus:
+      # -- Secret name that contains credentials for Prometheus
+      secret_name: ~
+      # -- Prometheus Basic auth username
+      username: ""
+      # -- Key in the secret that references the username
+      username_key: DB_BASIC_AUTH_USERNAME
+      # -- Prometheus Basic auth password
+      password: ""
+      # -- Key in the secret that references the password
+      password_key: DB_BASIC_AUTH_PW
+      # -- Prometheus Bearer token
+      bearer_token: ""
+      bearer_token_key: DB_BEARER_TOKEN
+      external:
+        # -- Use external Prometheus (eg. Grafana Cloud)
+        enabled: false
+        # -- External Prometheus url
+        url: "https://prometheus.example.com/prometheus"
+      internal:
+        # -- Use in-cluster Prometheus
+        enabled: true
+        # -- Service name of in-cluster Prometheus
+        serviceName: opencost-dev-prometheus-server
+        # -- Namespace of in-cluster Prometheus
+        namespaceName: is-chart
+        # -- Service port of in-cluster Prometheus
+        port: 80
+      thanos:
+        enabled: false
+        queryOffset: ''
+        maxSourceResolution: ''
+        internal:
+          enabled: true
+          serviceName: my-thanos-query
+          namespaceName: opencost
+          port: 10901
+        external:
+          enabled: false
+          url: 'https://thanos-query.example.com/thanos'
+
+    ui:
+      # -- Enable OpenCost UI
+      enabled: true
+      image:
+        # -- UI container image registry
+        registry: quay.io
+        # -- UI container image name
+        repository: kubecost1/opencost-ui
+        # -- UI container image tag
+        # @default -- `""` (use appVersion in Chart.yaml)
+        tag: ""
+        # -- UI container image pull policy
+        pullPolicy: IfNotPresent
+      resources:
+        # -- CPU/Memory resource requests
+        requests:
+          cpu: '10m'
+          memory: '55Mi'
+        # -- CPU/Memory resource limits
+        limits:
+          cpu: '999m'
+          memory: '1Gi'
+      # Liveness probe configuration
+      livenessProbe:
+        # -- Whether probe is enabled
+        enabled: true
+        # -- Number of seconds before probe is initiated
+        initialDelaySeconds: 30
+        # -- Probe frequency in seconds
+        periodSeconds: 10
+        # -- Number of failures for probe to be considered failed
+        failureThreshold: 3
+      # Readiness probe configuration
+      readinessProbe:
+        # -- Whether probe is enabled
+        enabled: true
+        # -- Number of seconds before probe is initiated
+        initialDelaySeconds: 30
+        # -- Probe frequency in seconds
+        periodSeconds: 10
+        # -- Number of failures for probe to be considered failed
+        failureThreshold: 3
+      # -- The security options the container should be run with
+      securityContext: {}
+        # capabilities:
+        #   drop:
+        #   - ALL
+        # readOnlyRootFilesystem: true
+        # runAsNonRoot: true
+        # runAsUser: 1000
+
+      # -- A list of volume mounts to be added to the pod
+      extraVolumeMounts: []
+
+      ingress:
+        # -- Ingress for OpenCost UI
+        enabled: true
+        # -- Ingress controller which implements the resource
+        ingressClassName: "nginx"
+        # -- Annotations for Ingress resource
+        annotations:
+          nginx.ingress.kubernetes.io/whitelist-source-range: 14.232.166.121/32,113.20.108.35/32,118.70.125.152/32,113.160.224.57/32,118.69.70.245/32,118.69.61.27/32,115.73.208.235/32,192.168.0.0/16, 172.16.10.0/24
+          # kubernetes.io/tls-acme: "true"
+        # -- A list of host rules used to configure the Ingress
+        # @default -- See [values.yaml](values.yaml)
+        hosts:
+          - host: opencost.dev.ftech.ai
+            paths:
+              - /
+        # -- Ingress TLS configuration
+        tls: []
+          #  - secretName: chart-example-tls
+          #    hosts:
+          #      - chart-example.local
+    # -- Toleration labels for pod assignment
+    tolerations: []
+    # -- Node labels for pod assignment
+    nodeSelector: {}
+    # -- Affinity settings for pod assignment
+    affinity: {}
+    # -- Assign custom TopologySpreadConstraints rules
+    topologySpreadConstraints: []
+
+  # -- A list of volumes to be added to the pod
+  extraVolumes: []
+
+prometheus:
+  extraScrapeConfigs: |
+    - job_name: opencost
+      honor_labels: true
+      scrape_interval: 1m
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      dns_sd_configs:
+      - names:
+        - opencost-dev.is-chart
+        type: 'A'
+        port: 9003
+  prometheus-pushgateway:
+    enabled: false
+  alertmanager:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false

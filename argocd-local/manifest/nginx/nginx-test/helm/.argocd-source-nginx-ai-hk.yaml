@@ -1,0 +1,8 @@
+helm:
+  parameters:
+  - name: poly.apps.nginx-test.image.name
+    value: registry.ftech.ai/is-test/nginx
+    forcestring: true
+  - name: poly.apps.nginx-test.image.tag
+    value: local-2023-04-07_09-16-22-307f2e48
+    forcestring: true

@@ -1,0 +1,80 @@
+{{ if .Values.K8sMountVolumeHostPath.enabled }}
+---
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8smountvolumehostpath
+  labels:
+    {{- include "gatekeeper-constraints.labels" . | nindent 4 }}
+  annotations:
+    metadata.gatekeeper.sh/title: "Mount Volume HostPath"
+    metadata.gatekeeper.sh/version: 1.0.0
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sMountVolumeHostPath
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            operations:
+              type: array
+              items:
+                type: string
+            exemptImages:
+              description: >-
+                Any container that uses an image that matches an entry in this list will be excluded
+                from enforcement.
+              type: array
+              items:
+                type: string
+
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8smountvolumehostpath
+
+      import data.lib.k8smountvolumehostpath.is_exempt
+      import future.keywords.if
+      import future.keywords.in
+      
+      input_pod := input.review.object
+
+      input_containers[c] {
+        c := input_pod.spec.containers[_]
+      }
+      input_containers[c] {
+        c := input_pod.spec.initContainers[_]
+      }
+      input_containers[c] {
+        c := input_pod.spec.ephemeralContainers[_]
+      }
+
+      has_hostpath if {
+        input.review.operation in input.parameters.operations
+        some v in input_pod.spec.volumes
+        v["hostPath"]
+      }
+      
+      violation[{"msg": msg, "details": {}}] {
+        c := input_containers[_]
+        not is_exempt(c)
+        has_hostpath
+        msg := sprintf("Volume type hostPath is not allowed", [])
+      }
+
+    libs: 
+    - |
+      package lib.k8smountvolumehostpath
+
+      import future.keywords.in
+
+      is_exempt(container) {
+        exempt_images := object.get(object.get(input, "parameters", {}), "exemptImages", [])
+        count(exempt_images) > 0
+        img := split(container.image, ":")[0]
+        img in exempt_images
+      }
+{{ end }}

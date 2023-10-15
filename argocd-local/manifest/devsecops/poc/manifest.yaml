@@ -1,0 +1,150 @@
+#apiVersion: apps/v1
+#kind: DaemonSet
+#metadata:
+#  name: poc
+#spec:
+#  selector:
+#    matchLabels:
+#      app.kubernetes.io/name: poc
+#  template:
+#    metadata:
+#      labels:
+#        app.kubernetes.io/name: poc
+#      name: poc
+#    spec:
+#      #hostPID: true
+#      #hostIPC: true
+#      #hostNetwork: true
+#      containers:
+#      - name: poc
+#        image: registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3
+#        command:
+#          - sleep
+#          - "infinity"
+#        imagePullPolicy: IfNotPresent
+#        resources:
+#          limits:
+#            cpu: 20m
+#            memory: 50Mi
+#        #securityContext:
+#          #allowPrivilegeEscalation: true
+#          #privileged: true
+#        #volumeMounts:
+#        #- name: host-files
+#        #  mountPath: /host-files
+#      #volumes:
+#      #- name: host-files
+#      #  hostPath:
+#      #    path: /
+#
+#---
+#apiVersion: autoscaling/v1beta1
+#kind: HorizontalPodAutoscaler
+#metadata:
+#  name: poc
+#spec:
+#  scaleTargetRef:
+#    apiVersion: apps/v1
+#    kind: Deployment
+#    name: poc
+#  behavior:
+#    scaleDown:
+#      policies:
+#        - periodSeconds: 15
+#          type: Percent
+#          value: 100
+#      selectPolicy: Max
+#      stabilizationWindowSeconds: 300
+#    scaleUp:
+#      policies:
+#        - periodSeconds: 15
+#          type: Pods
+#          value: 4
+#        - periodSeconds: 15
+#          type: Percent
+#          value: 100
+#      selectPolicy: Max
+#      stabilizationWindowSeconds: 300
+#  maxReplicas: 4
+#  metrics:
+#    - resource:
+#        name: memory
+#        target:
+#          averageUtilization: 80
+#          type: Utilization
+#      type: Resource
+#    - resource:
+#        name: cpu
+#        target:
+#          averageUtilization: 80
+#          type: Utilization
+#      type: Resource
+#  minReplicas: 2
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#  name: nginx-test
+#  labels:
+#    app: nginx-test
+# spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: nginx-test
+#  template:
+#    metadata:
+#      labels:
+#        app: nginx-test
+#    spec:
+#      containers:
+#        - name: nginx
+#          securityContext:
+#            {}
+#          image: "nginx"
+#          imagePullPolicy: Always
+#          ports:
+#            - name: http
+#              containerPort: 80
+#              protocol: TCP
+#          resources:
+#            limits:
+#              memory: 50Mi
+#            requests:
+#              cpu: 50m
+#              memory: 50Mi      
+# ---
+# apiVersion: networking.k8s.io/v1beta1
+# kind: Ingress
+# metadata:
+#   name: nginx-ftech-com-vn
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
+#     nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+#     nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.20.0/24,10.233.0.0/16
+#     nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+#     kubernetes.io/tls-acme: "true"
+#   labels:
+#     owner: is
+# spec:
+#   rules:
+#   - host: nginx-test.prod.ftech.ai
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: nginx-ftech-com-vn
+#           servicePort: 80
+#         pathType: Prefix
+#         path: /
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nginx-ftech-com-vn
+# spec: 
+#   ports:
+#   - port: 80
+#   selector:
+#     app: nginx-test

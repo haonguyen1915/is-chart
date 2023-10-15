@@ -1,0 +1,121 @@
+#---
+## Source: nginx/charts/poly/templates/service.yaml
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: nginx
+#  labels:
+#    helm.sh/chart: nginx-0.1.0
+#    app.kubernetes.io/name: nginx
+#    app.kubernetes.io/instance: "nginx"
+#    app.kubernetes.io/version: "1.16.0"
+#    app.kubernetes.io/managed-by: "Helm"
+#spec:
+#  type: ClusterIP
+#  ports:
+#    - port: 80
+#      targetPort: http
+#      protocol: TCP
+#      name: http
+#  selector:
+#    app.kubernetes.io/name: nginx
+#    app.kubernetes.io/instance: "nginx"
+#---
+## Source: nginx/charts/poly/templates/deployment.yaml
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: nginx
+#  labels:
+#    helm.sh/chart: nginx-0.1.0
+#    app.kubernetes.io/name: nginx
+#    app.kubernetes.io/instance: "nginx"
+#    app.kubernetes.io/version: "1.16.0"
+#    app.kubernetes.io/managed-by: "Helm"
+#spec:
+#  replicas: 1
+#  strategy:
+#    type: "RollingUpdate"
+#  revisionHistoryLimit: 0
+#  progressDeadlineSeconds: 600
+#  selector:
+#    matchLabels:
+#      app.kubernetes.io/name: nginx
+#      app.kubernetes.io/instance: "nginx"
+#  template: 
+#    metadata:
+#      name: nginx
+#      labels:
+#        app.kubernetes.io/name: nginx
+#        app.kubernetes.io/instance: "nginx"        
+#    spec:
+#      serviceAccountName: default
+#      securityContext: 
+#        {}
+#      containers:
+#        - name: nginx
+#          securityContext:
+#            {}
+#          image: "nginx:latest"
+#          imagePullPolicy: "IfNotPresent"
+#          ports:
+#            - name: "http"
+#              containerPort: 80
+#              protocol: "TCP"      
+#          livenessProbe: 
+#            httpGet:
+#              path: /
+#              port: http
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
+#            successThreshold: 1
+#            timeoutSeconds: 5
+#          readinessProbe: 
+#            httpGet:
+#              path: /
+#              port: http
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
+#            successThreshold: 1
+#            timeoutSeconds: 5
+#          startupProbe: 
+#            failureThreshold: 30
+#            httpGet:
+#              path: /
+#              port: http
+#            periodSeconds: 10
+#            timeoutSeconds: 5
+#          lifecycle:
+#            preStop: 
+#              exec:
+#                command:
+#                - /bin/bash
+#                - -c
+#                - sleep 30
+#          resources: 
+#            {}
+#---
+## Source: nginx/charts/poly/templates/ingress.yaml
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: nginx
+#  labels:
+#    helm.sh/chart: nginx-0.1.0
+#    app.kubernetes.io/name: nginx
+#    app.kubernetes.io/instance: "nginx"
+#    app.kubernetes.io/version: "1.16.0"
+#    app.kubernetes.io/managed-by: "Helm"
+#spec:
+#  rules:
+#    - host: chart-example.local
+#      http:
+#        paths:
+#        - path: /thiennam23
+#          pathType: Prefix
+#          backend:
+#            service:
+#              name: nginx
+#              port:
+#                number: 80
+#

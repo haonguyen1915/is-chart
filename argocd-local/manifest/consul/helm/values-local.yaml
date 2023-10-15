@@ -1,0 +1,27 @@
+consul:
+  enabled: true
+
+  server:
+    replicas: 3
+  
+  connectInject:
+    resources:
+      requests:
+        # Recommended production default: 500Mi
+        # @type: string
+        memory: "100Mi"
+        # Recommended production default: 250m
+        # @type: string
+        cpu: "250m"
+      limits:
+        # Recommended production default: 500Mi
+        # @type: string
+        memory: "250Mi"
+        # Recommended production default: 250m
+        # @type: string
+        cpu: "250m"
+
+  ingressGateways:
+    # Enable ingress gateway deployment. Requires `connectInject.enabled=true`
+    # and `client.enabled=true`.
+    enabled: true

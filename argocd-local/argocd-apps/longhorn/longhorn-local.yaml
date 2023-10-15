@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn-local
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  ignoreDifferences:
+  - kind: Secret
+    namespace: longhorn
+    jsonPointers:
+    - /data
+  destination:
+    namespace: longhorn
+    server: https://kubernetes.default.svc
+  project: longhorn
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: master
+    path: argocd-local/manifest/longhorn
+    helm:
+      releaseName: longhorn
+      version: v3
+      valueFiles:
+      - values-local.yaml
+  syncPolicy:
+    #automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    - CreateNamespace=true
+    # - Replace=true # fix metadata.annotations: Too long
+    - ApplyOutOfSyncOnly=true
+    - FailOnSharedResource=true
+

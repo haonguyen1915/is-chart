@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: metallb
+  namespace: argocd
+  labels:
+    owner: IS
+    pic: IS.namtt
+spec:
+  roles:
+    - name: metallb-view
+      policies:
+      - p, proj:argocd:metallb-view, applications, get, argocd/metallb, allow
+      - p, proj:metallb:metallb-view, applications, get, metallb/*, allow
+      - p, proj:metallb:metallb-view, logs, get, metallb/*, allow
+      groups:
+      - devops/is-intern-devops
+    - name: metallb-admin
+      policies:
+      - p, proj:metallb:metallb-admin, applications, get, metallb/*, allow
+      - p, proj:metallb:metallb-admin, applications, sync, metallb/*, allow
+      - p, proj:metallb:metallb-admin, applications, update, metallb/*, allow
+      - p, proj:metallb:metallb-admin, applications, delete, metallb/*, allow
+      - p, proj:metallb:metallb-admin, logs, get, metallb/*, allow
+      - p, proj:metallb:metallb-admin, exec, create, metallb/*, allow
+      groups:
+      - namtt@ftech.ai
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  # namespaceResourceBlacklist:
+  destinations:
+  # for app of apps
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  - namespace: metallb
+    server: https://kubernetes.aihk.ftech.ai
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

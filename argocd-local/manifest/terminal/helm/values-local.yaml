@@ -1,0 +1,24 @@
+poly: 
+  apps:  
+    terminal:
+      enabled: true
+      image:
+        repository: registry.ftech.ai/public/terminal
+        tag: "dev-2023-03-06_05-12-53-7c4c0375"
+      container:
+        command: []
+        runtimeArgs: []
+        probes:
+          disableProbes: ["livenessProbe", "readinessProbe", "startupProbe"]
+        lifecycle:
+          disableHandlers: ["postStart","preStop"]
+        resources: 
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      service:
+        enabled: false
+      autoscaling:
+        enabled: false

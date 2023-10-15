@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-regcred
+  namespace: argocd
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: argocd-local
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: HEAD
+    path: argocd-local/argocd-apps/regcred/nginx
+    directory:
+      recurse: true
+  syncPolicy:
+    #automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    - CreateNamespace=true

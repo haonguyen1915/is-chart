@@ -1,0 +1,36 @@
+longhorn:
+  enabled: true
+  persistence:
+    defaultClassReplicaCount: 2
+  defaultSettings:
+    removeSnapshotsDuringFilesystemTrim: enabled
+    orphanAutoDeletion: true
+    replicaAutoBalance: least-effort
+    defaultReplicaCount: 2
+    storageOverProvisioningPercentage: 300
+    storageMinimalAvailablePercentage: 10
+
+autotrimcronjob:
+  enabled: false
+  schedule: "*/21 * * * *"
+  image: tiankoob23/longhorn-auto-trim:v3
+  config:
+    LONGHORN_URL: http://longhorn-frontend/v1
+    LONGHORN_NAMESPACE: longhorn
+
+serviceMonitor:
+  enabled: true
+  endpoint:
+    path: /metrics
+    port: manager
+    interval: 30s
+
+longhorn-auto-trim:
+  enabled: true
+  fullnameOverride: "longhorn-auto-trim"
+  config:
+    LONGHORN_NS: "longhorn"
+    LONGHORN_URL: "http://longhorn-frontend.longhorn.svc.cluster.local/v1"
+  jobs:
+    - volumeId: "pvc-d198bd6d-58a7-4510-af57-fd4c5228af3b"
+      schedule: "*/21 * * * *"

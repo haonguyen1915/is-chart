@@ -1,0 +1,342 @@
+cluster: ai
+argo-cd:
+  configs:
+    cm:
+      #application.resourceTrackingMethod: annotation
+      resource.compareoptions: |
+        ignoreAggregatedRoles: true
+    params:
+      controller.repo.server.timeout.seconds: 180
+    secret:
+      gitlabSecret: "y02lphJrFC49QLn4f3"
+  repoServer:
+    env:
+      - name: ARGOCD_EXEC_TIMEOUT
+        value: '5m'
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    containerSecurityContext:
+      seccompProfile:
+        type: Unconfined
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - "k8s-master"
+  dex:
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - "k8s-master"
+  redis:
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - "k8s-master"
+  applicationSet:
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    serviceAccount:
+      automountServiceAccountToken: true
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - "k8s-master"
+  notifications:
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    serviceAccount:
+      automountServiceAccountToken: true
+  controller:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - "k8s-master"
+    extraArgs:
+      - --metrics-application-labels
+      - owner
+      - --metrics-application-labels
+      - pic
+      - --metrics-application-labels
+      - source-repo
+    # affinity:
+    #   nodeAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #       nodeSelectorTerms:
+    #         - matchExpressions:
+    #           - key: kubernetes.io/hostname
+    #             operator: NotIn
+    #             values:
+    #               - "ai-gpu-1"
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+      rules:
+        enabled: true
+        spec:
+          - alert: ArgoAppMissing
+            expr: |
+              absent(argocd_app_info)
+            for: 15m
+            labels:
+              severity: critical
+            annotations:
+              summary: "[Argo CD] No reported applications"
+              description: >
+                Argo CD has not reported any applications data for the past 15 minutes which
+                means that it must be down or not functioning properly.  This needs to be
+                resolved for this cloud to continue to maintain state.
+          - alert: ArgoAppNotSynced
+            expr: |
+              label_replace(
+                  label_replace(
+                    argocd_app_info{sync_status!="Synced"}
+                      * on (name)
+                      group_left(label_owner, label_pic)
+                      argocd_app_labels{}
+                    , "owner", "$1", "label_owner", "(.+)"
+                  )
+                , "pic", "$1", "label_pic", "(.+)"
+              ) == 1
+            for: 10m
+            labels:
+              severity: critical
+            annotations:
+              summary: "`{{ $labels.name }}` Application not synchronized"
+              description: |
+                sync_status: `{{ $labels.sync_status }}`
+                application: `{{ $labels.name }}`
+                project: `{{ $labels.project }}`
+          - alert: ArgoAppNotHealthy
+            expr: |
+              label_replace(
+                  label_replace(
+                    argocd_app_info{health_status!="Healthy"}
+                      * on (name)
+                      group_left(label_owner, label_pic)
+                      argocd_app_labels{}
+                    , "owner", "$1", "label_owner", "(.+)"
+                  )
+                , "pic", "$1", "label_pic", "(.+)"
+              ) == 1
+            for: 10m
+            labels:
+              severity: critical
+            annotations:
+              summary: "`{{ $labels.name }}` Application not Healthy"
+              description: |
+                health_status: `{{ $labels.health_status }}`
+                application: `{{ $labels.name }}`
+                project: `{{ $labels.project }}`
+  server:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - "k8s-master"
+    extraArgs:
+    - --insecure
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/backend-protocol: HTTP
+      hosts:
+        - argocd.local.ftech.ai
+      paths:
+        - /
+    config:
+      url: https://argocd.local.ftech.ai
+      exec.enabled: "true"
+      admin.enabled: "false"
+      dex.config: |
+        connectors:
+          - type: gitlab
+            id: gitlab
+            name: GitLab
+            config:
+              baseURL: https://gitlab.ftech.ai
+              clientID: 2dc7db958764bd7b0c48f17106cedf7e93db7929bdcddb8662ce01cf8f7b3a44 
+              clientSecret: 93d0c7349ee9f2fb94f51a691ee7cd7342823628c50bbbe7cc01196c7eb208bc
+    rbacConfig:
+      policy.csv: |
+        g, is-admin, role:admin
+        g, devops/is-intern-devops, role:admin
+        g, haonv@ftech.ai, role:admin
+
+        p, role:repo-admin, repositories, get, https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git, allow
+        g, is.test@ftech.ai, role:repo-admin
+
+      scopes: "[email, groups]"
+
+argocd-apps:
+  applications:
+  - name: argocd-local
+    namespace: argocd
+    destination:
+      namespace: argocd
+      server: https://kubernetes.default.svc
+    project: argocd-local
+    source:
+      helm:
+        version: v3
+      path: argocd-local/argocd-install
+      repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+      targetRevision: HEAD
+    syncPolicy:
+      #automated:
+      #  selfHeal: true
+      #  prune: true
+      syncOptions:
+      - CreateNamespace=true
+  - name: argocd-local-apps
+    namespace: argocd
+    destination:
+      namespace: argocd
+      server: https://kubernetes.default.svc
+    project: argocd-local
+    source:
+      path: argocd-local/argocd-apps/app-of-apps
+      repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+      targetRevision: HEAD
+      # directory:
+      #   recurse: false
+      #   jsonnet: {}
+    syncPolicy:
+      #automated:
+      #  selfHeal: true
+      #  prune: true
+  - name: argocd-local-projects
+    namespace: argocd
+    destination:
+      namespace: argocd
+      server: https://kubernetes.default.svc
+    project: argocd-local
+    source:
+      path: argocd-local/argocd-appprojects
+      repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+      targetRevision: HEAD
+      directory:
+        recurse: true
+        jsonnet: {}
+    syncPolicy:
+      #automated:
+      #  selfHeal: true
+      #  prune: true
+
+  - name: argocd-dev-test-apps
+    namespace: argocd
+    destination:
+      namespace: argocd
+      server: https://kubernetes.default.svc
+    project: argocd-dev-test
+    source:
+      path: argocd-apps/app-of-apps
+      repoURL: https://gitlab.local.ftech.ai/devsecops/argocd-manifest/manifest-dev-test/argocd.git
+      targetRevision: HEAD
+      # directory:
+      #   recurse: false
+      #   jsonnet: {}
+    syncPolicy:
+      #automated:
+      #  selfHeal: true
+      #  prune: true
+  - name: argocd-dev-test-projects
+    namespace: argocd
+    destination:
+      namespace: argocd
+      server: https://kubernetes.default.svc
+    project: argocd-dev-test
+    source:
+      path: argocd-appprojects
+      repoURL: https://gitlab.local.ftech.ai/devsecops/argocd-manifest/manifest-dev-test/argocd.git
+      targetRevision: HEAD
+      directory:
+        recurse: true
+        jsonnet: {}
+    syncPolicy:
+      #automated:
+      #  selfHeal: true
+      #  prune: true
+  projects:
+  - name: argocd-local
+    namespace: argocd
+    additionalLabels: {}
+    additionalAnnotations: {}
+    description: Argocd Project
+    sourceRepos:
+    - '*'
+    destinations:
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+    - namespace: "*"
+      server: https://kubernetes.default.svc
+    clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+    orphanedResources:
+      warn: false
+  - name: argocd-dev-test
+    namespace: argocd
+    additionalLabels: {}
+    additionalAnnotations: {}
+    description: Argocd Project for Dev test cluster
+    sourceRepos:
+    - '*'
+    destinations:
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+    - namespace: "*"
+      server: https://kubernetes.default.svc
+    clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+    orphanedResources:
+      warn: false

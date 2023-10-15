@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: elk-local-test
+  namespace: argocd
+spec:
+  roles:
+    - name: elk-xpack-admin
+      policies:
+      - p, proj:elk-xpack:elk-xpack-admin, applications, get, elk-xpack/*, allow
+      - p, proj:elk-xpack:elk-xpack-admin, logs, get, elk-xpack/*, allow
+      - p, proj:elk-xpack:elk-xpack-admin, applications, sync, elk-xpack/*, allow
+      - p, proj:elk-xpack:elk-xpack-admin, applications, update, elk-xpack/*, allow
+      groups:
+      - is.test@ftech.ai
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: elk
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

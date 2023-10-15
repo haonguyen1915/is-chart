@@ -1,0 +1,17 @@
+{{ if .Values.K8sMountVolumeHostPath.enabled }}
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sMountVolumeHostPath
+metadata:
+  name: k8s-mount-volume-hostpath
+  labels:
+    {{- include "gatekeeper-constraints.labels" . | nindent 4 }}
+spec:
+  match:
+    kinds: {{ toYaml .Values.K8sMountVolumeHostPath.matchKinds | nindent 6 }}
+  parameters:
+    operations:
+      - "CREATE"
+      - "UPDATE"
+    exemptImages: {{ toYaml .Values.K8sMountVolumeHostPath.exemptImages | nindent 6 }}
+{{ end }}

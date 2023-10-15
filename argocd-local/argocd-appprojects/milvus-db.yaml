@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: milvus-db
+  namespace: argocd
+spec:
+  roles:
+    - name: milvus-db-view
+      policies:
+      - p, proj:milvus-db:milvus-db-view, applications, get, milvus-db/*, allow
+      - p, proj:milvus-db:milvus-db-view, logs, get, milvus-db/*, allow
+      - p, proj:milvus-db:milvus-db-view, applications, sync, milvus-db/*, allow
+      - p, proj:milvus-db:milvus-db-view, applications, action/*/Pod/delete, milvus-db/*, allow
+      groups:
+      - is.test@ftech.ai
+
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  # namespaceResourceBlacklist:
+  # - group: '*'
+  #   kind: Role
+  # - group: '*'
+  #   kind: RoleBinding
+  destinations:
+  - namespace: argocd 
+    server: https://kubernetes.default.svc
+  - namespace: milvus-db
+    server: https://kubernetes.default.svc
+
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/intern/monitoring.git
+  

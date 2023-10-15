@@ -1,0 +1,33 @@
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+#  name: caretta-local
+#  namespace: argocd
+#  labels:
+#    owner: is
+#    env: local
+#    pic: IS.sondh
+#  finalizers:
+#    - resources-finalizer.argocd.argoproj.io
+#spec:
+#  destination:
+#    namespace: monitoring
+#    server: https://kubernetes.default.svc
+#  project: intern
+#  source:
+#    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+#    targetRevision: master
+#    path: argocd-local/manifest/caretta/helm
+#    helm:
+#      releaseName: caretta-local
+#      version: v3
+#      valueFiles:
+#      - values-local.yaml
+#  syncPolicy:
+#    #automated:
+#    #  selfHeal: true
+#    #  prune: true
+#    syncOptions:
+#    - CreateNamespace=true
+#    - FailOnSharedResource=true
+#

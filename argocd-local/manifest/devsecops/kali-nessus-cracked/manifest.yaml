@@ -1,0 +1,148 @@
+---
+# Source: kali-nessus-cracked/charts/poly/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "kali-nessus-cracked"
+  labels:
+    helm.sh/chart: kali-nessus-cracked-1.0.0
+    app.kubernetes.io/name: kali-nessus-cracked
+    app.kubernetes.io/instance: "kali-nessus-cracked"
+    owner: "IS"
+    pic: "IS.sondh"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 11127
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: kali-nessus-cracked
+    app.kubernetes.io/instance: "kali-nessus-cracked"
+    owner: "IS"
+    pic: "IS.sondh"
+---
+# Source: kali-nessus-cracked/charts/poly/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "kali-nessus-cracked"
+  labels:
+    helm.sh/chart: kali-nessus-cracked-1.0.0
+    app.kubernetes.io/name: kali-nessus-cracked
+    app.kubernetes.io/instance: "kali-nessus-cracked"
+    owner: "IS"
+    pic: "IS.sondh"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+spec:
+  strategy:
+    type: "RollingUpdate"
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kali-nessus-cracked
+      app.kubernetes.io/instance: "kali-nessus-cracked"
+      owner: "IS"
+      pic: "IS.sondh"
+  template: 
+    metadata:
+      name: kali-nessus-cracked
+      labels:
+        app.kubernetes.io/name: kali-nessus-cracked
+        app.kubernetes.io/instance: "kali-nessus-cracked"
+        owner: "IS"
+        pic: "IS.sondh"        
+    spec:
+      imagePullSecrets: 
+        - name: regcred-is-chart
+      serviceAccountName: default
+      securityContext: 
+        {}
+      containers:
+        - name: kali-nessus-cracked
+          securityContext:
+            {}
+          image: "registry.ftech.ai/is-chart/kali-nessus-cracked:latest"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh","-c"]
+          args: ["systemctl start nessusd; sleep infinity"]
+          ports:
+            - name: "http"
+              containerPort: 11127
+              protocol: "TCP"      
+          livenessProbe: 
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - uname -a
+            failureThreshold: 10
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe: 
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - uname -a
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 5
+          startupProbe: 
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - uname -a
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          lifecycle:
+            preStop: 
+              exec:
+                command:
+                - sh
+                - -c
+                - sleep 5
+          resources: 
+            limits:
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 4Gi
+---
+# Source: kali-nessus-cracked/charts/poly/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "kali-nessus-cracked"
+  labels:
+    helm.sh/chart: kali-nessus-cracked-1.0.0
+    app.kubernetes.io/name: kali-nessus-cracked
+    app.kubernetes.io/instance: "kali-nessus-cracked"
+    owner: "IS"
+    pic: "IS.sondh"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:    
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  rules:
+    - host: "nessus.local.ftech.ai"
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: "kali-nessus-cracked"
+              port:
+                number: 11127

@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metallb-ai-hk
+  namespace: argocd
+  labels:
+    owner: IS
+    pic: IS.namtt
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: metallb
+    server: https://kubernetes.aihk.ftech.ai
+  project: metallb
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: metallb
+    path: argocd-local/manifest/metallb
+    helm:
+      releaseName: metallb
+      version: v3
+      valueFiles:
+      - values-ai-hk.yaml
+  syncPolicy:
+    #automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    # - Replace=true # fix metadata.annotations: Too long
+    - CreateNamespace=true
+    - ApplyOutOfSyncOnly=true
+    - FailOnSharedResource=true
+  ignoreDifferences:
+  - group: apiextensions.k8s.io
+    kind: CustomResourceDefinition
+    jqPathExpressions:
+      - '.spec.conversion.webhook.clientConfig.caBundle'

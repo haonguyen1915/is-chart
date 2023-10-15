@@ -1,0 +1,17 @@
+{{ if .Values.K8sValidIngressPath.enabled }}
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sValidIngressPath
+metadata:
+  name: k8s-valid-ingress-path
+  labels:
+    {{- include "gatekeeper-constraints.labels" . | nindent 4 }}
+spec:
+  match:
+    kinds: {{ toYaml .Values.K8sValidIngressPath.matchKinds | nindent 6 }}
+  parameters:
+    operations:
+      - "CREATE"
+      - "UPDATE"
+    blockPartterns: {{ toYaml .Values.K8sValidIngressPath.blockPartterns | nindent 6 }}
+{{ end }}

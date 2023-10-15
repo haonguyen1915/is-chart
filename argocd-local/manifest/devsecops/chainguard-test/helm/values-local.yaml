@@ -1,0 +1,47 @@
+poly:
+  apps:
+    chainguard-test:
+      enabled: true
+      extraLabels:
+        owner: IS
+        pic: IS
+      image:
+        repository: nginx
+        #imagePullSecrets:
+        #  - name: regcred
+      container:
+        ports:
+          - containerPort: 80
+        probes:
+          disableProbes: ["livenessProbe", "readinessProbe","startupProbe"]
+        lifecycle:
+          disableHandlers: ["postStart","preStop"]
+        resources:
+          limits:
+            memory: 50Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        #securityContext:
+        #  runAsNonRoot: true
+        #  seccompProfile:
+        #    type: "RuntimeDefault"
+        #  allowPrivilegeEscalation: false
+        #  capabilities:
+        #    drop:
+        #    - ALL
+      service:
+        ports:
+          - port: 80
+      ingress:
+        enabled: false
+        annotations:
+          kubernetes.io/ingress.class: nginx
+          # nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+          # nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.1.28/16
+        hosts:
+          - host: nginx.ftech.com.vn
+      autoscaling:
+        enabled: false
+
+

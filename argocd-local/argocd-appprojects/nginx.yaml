@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nginx
+  namespace: argocd
+spec:
+  roles:
+    - name: nginx-admin
+      policies:
+      - p, proj:nginx:nginx-admin, applications, get, nginx/nginx*, allow
+      - p, proj:nginx:nginx-admin, logs, get, nginx/nginx*, allow
+      - p, proj:nginx:nginx-admin, applications, sync, nginx/nginx*, allow
+      - p, proj:nginx:nginx-admin, applications, delete, nginx/nginx*, allow
+      - p, proj:nginx:nginx-admin, applications, update, nginx/nginx*, allow
+      groups:
+      - sondh2@ftech.ai
+    - name: nginx-test
+      policies:
+      - p, proj:nginx:nginx-test, applications, get, nginx/*, allow
+      #- p, proj:nginx:nginx-test, applications, create, nginx/*, allow
+      - p, proj:nginx:nginx-test, applications, sync, nginx/*, allow
+      #- p, proj:nginx:nginx-test, applications, update, nginx/*, allow
+      #- p, proj:nginx:nginx-test, applications, delete, nginx/*, allow
+      #- p, proj:nginx:nginx-test, applications, override, nginx/*, allow
+      #- p, proj:nginx:nginx-test, applications, action/*, nginx/*, allow
+      #- p, proj:nginx:nginx-test, exec, create, nginx/*, allow
+      groups:
+      - is.test@ftech.ai
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: '*'
+    kind: PriorityClass 
+  namespaceResourceBlacklist:
+  - group: '*'
+    kind: Role
+  - group: '*'
+    kind: RoleBinding
+
+  destinations:
+  - namespace: nginx
+    server: https://kubernetes.default.svc
+  - namespace: nginx
+    server: https://kubernetes.aihk.ftech.ai
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+  - https://gitlab.ftech.ai/devops/gitops/argocd/template/nginx-manifest.git

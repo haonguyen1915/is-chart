@@ -1,0 +1,101 @@
+poly:
+  apps:
+    kong-domain-sd:
+      enabled: true
+      global:
+        nameOverride: f365
+        extraLabels:
+          owner: is
+          pic: IS.sondh
+          source-repo: gitlab.ftech.ai_devops_customservices_kong-domain-sd
+      chart:
+        name: "kong-domain-sd"
+        version: "0.0.1"
+      deploy:
+        replicaCount: 4
+      serviceAccount:
+        create: true
+        name: "kong-domain-sd-f365"
+        automountServiceAccountToken: false
+
+      image:
+        repository: registry.ftech.ai/is-chart/kong-domain-sd
+        imagePullSecrets:
+          - name: regcred
+      #pod:
+        #podAnnotations: 
+        #  vault.hashicorp.com/service: "https://vault-raft.prod.ftech.ai"
+        #extraLabels:
+        #  sidecar-injector: enabled
+      container:
+        ports:
+        - containerPort: 8080
+        
+        probes:
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            failureThreshold: 1
+            periodSeconds: 10
+            timeoutSeconds: 2
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 2
+        lifecycle: 
+          preStop:
+            exec:
+              command:
+                - /bin/sh
+                - '-c'
+                - sleep 10
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+      service:
+        enabled: true
+        ports:
+          - name: http
+            port: 8080
+            targetPort: 8080
+      #ingress:
+      #  enabled: true
+      #  annotations:
+      #    kubernetes.io/ingress.class: nginx
+      #    # kubernetes.io/tls-acme: "true"
+      #    nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+        #hosts:
+        #  - host: dev.ftech.ai       
+        
+      autoscaling:
+        enabled: true
+        minReplicas: 1
+        maxReplicas: 10
+      #vault: 
+      #  enabled: true
+      #  annotationValues:
+      #    path: "secret/data/projects/is-chart/kong/dev" # vault secret path
+      #    authPath: "auth/kubernetes-dev"
+      #    role: "is-chart-kong-domain-sd-dev-ro"
+      #  template:
+      #    type: annotation
+      #    fileName: ".env"
+      #    content: |
+      #      {{ with secret "secret/data/projects/is-chart/kong/dev" }}
+      #      export AUTH_NAME={{ .Data.data.AUTH_NAME }}
+      #      export AUTH_PASSWORD={{ .Data.data.AUTH_PASSWORD }}
+      #      {{ end }}

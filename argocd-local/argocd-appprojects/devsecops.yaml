@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: devsecops
+  namespace: argocd
+spec:
+  roles:
+    - name: devsecops-admin
+      policies:
+      - p, proj:devsecops:devsecops-admin, applications, get, devsecops/*poc*, allow
+      - p, proj:devsecops:devsecops-admin, logs, get, devsecops/*poc*, allow
+      groups:
+      - is.test@ftech.ai
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: '*'
+    kind: '*'
+
+  destinations:
+  - namespace: devsecops
+    server: https://kubernetes.default.svc
+  - namespace: devsecops
+    server: https://kubernetes.local2.ftech.ai
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

@@ -1,0 +1,6 @@
+trivy-operator:
+  enabled: true
+  operator:
+    metricsVulnIdEnabled: true
+  serviceMonitor:
+    enabled: true

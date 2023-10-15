@@ -1,0 +1,50 @@
+gitlab-runner-test: 
+  probeTimeoutSeconds: 5
+  gitlabUrl: https://gitlab.ftech.ai/
+  runnerRegistrationToken: "GR1348941obBjkieRtpaLz9ygAxQ7"
+  revisionHistoryLimit: 1
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      path: "/metrics"
+  service:
+    enabled: true
+  runners:
+    config: |
+      [[runners]]
+        [runners.kubernetes]
+          namespace = "{{.Release.Namespace}}"
+          image = "ubuntu:latest"
+          # privileged = true
+          [runners.kubernetes.volumes]
+            # [[runners.kubernetes.volumes.host_path]]
+            #   name = "buildah"
+            #   mount_path = "/var/lib/containers/"
+            #   read_only = false
+            # [[runners.kubernetes.volumes.empty_dir]]
+            #   name = "docker-lib"
+            #   mount_path = "var/lib/docker"
+            #   medium = "Memory"
+            # [[runners.kubernetes.volumes.empty_dir]]
+            #   name = "certs"
+            #   mount_path = "/certs/client"
+            #   medium = "Memory"   
+    tags: k8s-runner        
+  # privileged: true
+  rbac:
+    create: "true"
+    rules: 
+      - apiGroups: [""]
+        resources: ["*"]
+        verbs: ["*"]
+
+
+
+
+
+
+
+
+
+

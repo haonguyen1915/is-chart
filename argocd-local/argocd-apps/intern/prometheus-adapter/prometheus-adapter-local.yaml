@@ -1,0 +1,33 @@
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+#  name: prometheus-adapter-local
+#  namespace: argocd
+#  labels:
+#    owner: is
+#    env: local
+#    pic: IS.thuongdv
+#  finalizers:
+#    - resources-finalizer.argocd.argoproj.io
+#spec:
+#  destination:
+#    namespace:  k8s-runner
+#    server: https://kubernetes.default.svc
+#  project: intern
+#  source:
+#    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+#    targetRevision: master
+#    path: argocd-local/manifest/prometheus-adapter/helm
+#    helm:
+#      releaseName: prometheus-adapter
+#      version: v3
+#      valueFiles:
+#      - values-local.yaml
+#  syncPolicy:
+#    #automated:
+#    #  selfHeal: true
+#    #  prune: true
+#    syncOptions:
+#    - CreateNamespace=true
+#    - FailOnSharedResource=true
+#

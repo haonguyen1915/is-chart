@@ -1,0 +1,89 @@
+priorityClass:
+  enabled: true
+poly:
+  apps:
+    nginx-test:
+      enabled: true
+      extraLabels:
+        owner: IS
+        pic: IS
+      replicas: 3
+      image:
+        #repository: "registry.ftech.ai/is-test/nginx"
+        repository: "nginx"
+        #imagePullSecrets:
+        #- name: regcred
+      pod:
+        podLifecycle:
+          terminationGracePeriodSeconds: 60
+      container:
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        probes:
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: / # Request pic to provide healthcheck path
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+          readinessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: / # Request pic to provide healthcheck path
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+          startupProbe:
+            httpGet:
+              path: / # Request pic to provide healthcheck path
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 30
+        lifecycle:
+          disableHandlers: ["postStart"]
+          preStop:
+            exec: 
+              command: ["/bin/sh", "-c", "sleep 30"]
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        #securityContext:
+        #  runAsNonRoot: true
+        #  seccompProfile:
+        #    type: "RuntimeDefault"
+        #  allowPrivilegeEscalation: false
+        #  capabilities:
+        #    drop:
+        #    - ALL
+      service:
+        ports:
+          - name: http
+            port: 80
+            targetPort: http
+            protocol: TCP
+      ingress:
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: nginx
+          nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+          #nginx.ingress.kubernetes.io/affinity: "cookie"
+          #nginx.ingress.kubernetes.io/session-cookie-name: "sticky-test"
+          #nginx.ingress.kubernetes.io/session-cookie-expires: "10"
+          #nginx.ingress.kubernetes.io/session-cookie-max-age: "10"
+        hosts:
+          - host: nginx-sticky.local.ftech.ai      
+      autoscaling:
+        enabled: false
+
+

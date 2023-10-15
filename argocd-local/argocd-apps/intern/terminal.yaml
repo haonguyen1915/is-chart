@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: terminal
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: first-dev-test
+        namespace: intern
+        url: https://192.168.1.72:6443
+  template:
+    metadata:
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: terminal=registry.ftech.ai/public/terminal
+        argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/manifest
+        argocd-image-updater.argoproj.io/terminal.update-strategy: name
+        argocd-image-updater.argoproj.io/terminal.allow-tags: regexp:^dev-[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9a-zA-Z]+$
+        argocd-image-updater.argoproj.io/terminal.helm.image-name: poly.apps.terminal.image.repository
+        argocd-image-updater.argoproj.io/terminal.helm.image-tag: poly.apps.terminal.image.tag
+      name: 'terminal-{{cluster}}'
+      labels:
+        owner: is
+        pic: IS.tiennh
+    spec:
+      project: intern
+      source:
+        repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+        targetRevision: master
+        path: terminal/helm
+        helm: 
+          releaseName: terminal
+          version: v3
+          valueFiles:
+          - 'values.yaml'
+      destination:
+        server: '{{url}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+         selfHeal: true
+         allowEmpty: true
+         prune: true
+        syncOptions:
+        - CreateNamespace=true
+        - FailOnSharedResource=true

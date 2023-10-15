@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kong
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: intern
+    server: https://kubernetes.default.svc
+  project: intern
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: master
+    path: kong/helm
+    helm:
+      skipCrds: true
+      releaseName: kong
+      version: v3
+      valueFiles:
+      - values-local.yaml
+  syncPolicy:
+    # automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    - CreateNamespace=true
+    - ApplyOutOfSyncOnly=true
+    - FailOnSharedResource=true
+

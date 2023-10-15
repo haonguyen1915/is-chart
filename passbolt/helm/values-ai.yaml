@@ -1,0 +1,296 @@
+passbolt:
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  # Job clean action logs in database
+  cronJobCleanDB:
+    enabled: true
+    schedule: "0 17 * * *"
+    vault:
+      authPath: kubernetes-ai
+      path: "secret/data/projects/is-chart/passbolt/prod/env"
+      role: "is-chart-passbolt-env-ro"
+      url: "https://vault-raft.prod.ftech.ai"
+    serviceAccount:
+      create: true
+
+  # Create secret from vault
+  externalSecrets:
+    create: true
+    vault:
+      server: "https://vault-raft.prod.ftech.ai"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes-ai"
+          role: "passbolt-ai-ro"
+    env:
+      path: "secret/data/projects/is-chart/passbolt/prod/env"
+    gpg:
+      path: "secret/data/projects/is-chart/passbolt/prod/pgp"
+    jwt:
+      path: "secret/data/projects/is-chart/passbolt/prod/jwt"
+
+  ## Dependencies configuration parameters
+
+  ## Redis dependency parameters
+
+  # -- Install redis as a depending chart
+  redisDependencyEnabled: false
+
+  ## MariaDB dependency parameters
+
+  # -- Install mariadb as a depending chart
+  mariadbDependencyEnabled: false
+
+  ## Passbolt configuration
+
+  ## Passbolt container and sidecar parameters
+  app:
+    initImage:
+      # -- Configure pasbolt deployment init container image client for database
+      client: mariadb
+      # -- Configure pasbolt deployment image repsitory
+      repository: mariadb
+      # -- Configure pasbolt deployment image pullPolicy
+      pullPolicy: IfNotPresent
+      # -- Overrides the image tag whose default is the chart appVersion.
+      tag: latest
+    image:
+      # -- Configure pasbolt deployment image repsitory
+      repository: passbolt/passbolt
+      # -- Configure pasbolt deployment image pullPolicy
+      pullPolicy: IfNotPresent
+      # -- Overrides the image tag whose default is the chart appVersion.
+      tag: 4.1.2-1-ce
+    cache:
+      # Use CACHE_CAKE_DEFAULT_* variables to configure the connection to redis instance
+      # on the passboltEnv configuration section
+      redis:
+        # -- By enabling redis the chart will mount a configuration file on /etc/passbolt/app.php
+        # That instructs passbolt to store sessions on redis and to use it as a general cache.
+        enabled: true
+        sentinelProxy:
+          # -- Inject a haproxy sidecar container configured as a proxy to redis sentinel
+          # Make sure that CACHE_CAKE_DEFAULT_SERVER is set to '127.0.0.1' to use the proxy
+          enabled: false
+          # -- Configure redis sentinel proxy image
+          image:
+            # -- Configure redis sentinel image repository
+            repository: haproxy
+            # -- Configure redis sentinel image tag
+            tag: "latest"
+          # -- Configure redis sentinel container resources
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          # -- Configure the passbolt deployment resources
+    extraPodLabels: {}
+    resources:
+      requests:
+        cpu: 300m
+        memory: 256Mi
+
+  # -- Enable email cron
+  cronJobEmail:
+    enabled: true
+    schedule: "* * * * *"
+    extraPodLabels: {}
+
+  ## Passbolt environment parameters
+
+  # -- Pro subscription key in base64 only if you are using pro version
+  # subscriptionKey:
+  # -- Configure passbolt subscription key path
+  # subscription_keyPath: /etc/passbolt/subscription_key.txt
+
+  # -- Configure passbolt gpg directory
+  gpgPath: /etc/passbolt/gpg
+  # -- Gpg server private key in base64
+  gpgServerKeyPrivate: ""
+  # -- Gpg server public key in base64
+  gpgServerKeyPublic: ""
+
+  # -- Configure passbolt jwt directory
+  jwtPath: /etc/passbolt/jwt
+  # -- JWT server private key in base64
+  jwtServerPrivate: ""
+  # -- JWT server public key in base64
+  jwtServerPublic: ""
+
+  jobCreateGpgKeys:
+    extraPodLabels: {}
+
+  passboltEnv:
+    plain:
+      # -- Configure passbolt privacy url
+      PASSBOLT_LEGAL_PRIVACYPOLICYURL: https://passbolt.ai.ftech.ai
+      # -- Configure passbolt fullBaseUrl
+      APP_FULL_BASE_URL: https://passbolt.ai.ftech.ai
+      # -- Configure passbolt to force ssl
+      PASSBOLT_SSL_FORCE: true
+      # -- Toggle passbolt public registration
+      PASSBOLT_REGISTRATION_PUBLIC: false
+      # -- Configure passbolt cake cache server
+      # -- Configure passbolt default email service port
+      EMAIL_TRANSPORT_DEFAULT_PORT: 587
+      # -- Toggle passbolt debug mode
+      DEBUG: false
+      # -- Configure email used on gpg key. This is used when automatically creating a new gpg server key and when automatically calculating the fingerprint.
+      # -- Toggle passbolt selenium mode
+      PASSBOLT_SELENIUM_ACTIVE: false
+      # -- Configure passbolt license path
+      PASSBOLT_PLUGINS_LICENSE_LICENSE: /etc/passbolt/subscription_key.txt
+      # -- Configure passbolt default email sender name
+      EMAIL_DEFAULT_FROM_NAME: "FTECH passbolt"
+      # -- Configure passbolt default email from
+      EMAIL_DEFAULT_FROM: no-reply@ftech.ai
+      # -- Configure passbolt default email host
+      EMAIL_TRANSPORT_DEFAULT_HOST: smtp.gmail.com
+      # -- Toggle passbolt tls
+      EMAIL_TRANSPORT_DEFAULT_TLS: true
+      # -- Configure passbolt jwt private key path
+      PASSBOLT_JWT_SERVER_KEY: /var/www/passbolt/config/jwt/jwt.key
+      # -- Configure passbolt jwt public key path
+      PASSBOLT_JWT_SERVER_PEM: /var/www/passbolt/config/jwt/jwt.pem
+      # -- Toggle passbolt jwt authentication
+      PASSBOLT_PLUGINS_JWT_AUTHENTICATION_ENABLED: true
+      # -- Download Command for kubectl
+      KUBECTL_DOWNLOAD_CMD: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    # -- Environment variables to add to the passbolt pods
+    extraEnv: []
+    # -- Environment variables from secrets or configmaps to add to the passbolt pods
+    extraEnvFrom:
+      []
+      # - secretRef:
+      #     name: passbolt-secret
+  ## Passbolt deployment parameters
+
+  # -- If autoscaling is disabled this will define the number of pods to run
+  replicaCount: 3
+
+  # Configure autoscaling on passbolt deployment
+  autoscaling:
+    # -- Enable autoscaling on passbolt deployment
+    enabled: false
+    # -- Configure autoscaling minimum replicas
+    minReplicas: 1
+    # -- Configure autoscaling maximum replicas
+    maxReplicas: 100
+    # -- Configure autoscaling target CPU uptilization percentage
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  # -- Enable role based access control
+  rbacEnabled: true
+
+  # -- Configure passbolt container livenessProbe
+  livenessProbe:
+    # @ignore
+    httpGet:
+      port: https
+      scheme: HTTPS
+      path: /healthcheck/status.json
+      httpHeaders:
+        - name: Host
+          value: passbolt.ai.ftech.ai
+    initialDelaySeconds: 20
+    periodSeconds: 10
+  # -- Configure passbolt container RadinessProbe
+  readinessProbe:
+    # @ignore
+    httpGet:
+      port: https
+      scheme: HTTPS
+      httpHeaders:
+        - name: Host
+          value: passbolt.ai.ftech.ai
+      path: /healthcheck/status.json
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+  # Configure network policies to allow ingress access passbolt pods
+  # networkPolicy defines which labels are allowed to reach to passbolt
+  # and which namespaces
+  networkPolicy:
+    # -- Enable network policies to allow ingress access passbolt pods
+    enabled: false
+    # -- Configure network policies label for ingress deployment
+    label: app.kubernetes.io/name
+    # -- Configure network policies podLabel for podSelector
+    podLabel: ingress-nginx
+    # -- Configure network policies namespaceLabel for namespaceSelector
+    namespaceLabel: ingress-nginx
+
+  # -- Configure image pull secrets
+  imagePullSecrets: []
+  # -- Value to override the chart name on default
+  nameOverride: ""
+  # -- Value to override the whole fullName
+  fullnameOverride: ""
+
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations: {}
+
+  # -- Map of annotation for passbolt server pod
+  podAnnotations: {}
+
+  # -- Security Context configuration for passbolt server pod
+  podSecurityContext:
+    {}
+    # fsGroup: 2000
+
+  service:
+    # -- Configure passbolt service type
+    type: ClusterIP
+    # -- Configure passbolt service port
+    port: 443
+    # -- Configure passbolt service targetPort
+    targetPort: 443
+    # -- Configure passbolt service port name
+    name: https
+    # -- Annotations to add to the service
+    annotations: {}
+
+  ingress:
+    # -- Enable passbolt ingress
+    enabled: true
+    # -- Configure passbolt ingress annotations
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      kubernetes.io/tls-acme: 'true'
+      nginx.ingress.kubernetes.io/proxy-body-size: 100m
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/whitelist-source-range: 14.232.166.121/32,113.20.108.35/32,118.70.125.152/32,113.160.224.57/32,118.69.70.245/32,118.69.61.27/32,115.73.208.235/32,192.168.20.0/24
+    # -- Configure passbolt ingress hosts
+    hosts:
+      # @ignored
+      - host: passbolt.ai.ftech.ai
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    # -- Configure passbolt ingress tls
+    tls:
+      - secretName: passbolt.ai.ftech.ai-tls
+        hosts:
+          - passbolt.ai.ftech.ai
+  # -- Configure passbolt deployment nodeSelector
+  nodeSelector: {}
+
+  # -- Configure passbolt deployment tolerations
+  tolerations: []
+
+  # -- Configure passbolt deployment affinity
+  affinity: {}
+
+  # -- Add additional volumes, e.g. for overwriting config files
+  extraVolumes: ""
+
+  # -- Add additional volume mounts, e.g. for overwriting config files
+  extraVolumeMounts: ""
+

@@ -1,0 +1,28 @@
+{{ if .Values.constraints.k8sPrivilegedContainer }}
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPrivilegedContainer
+metadata:
+  name: k8s-privileged-container
+  labels:
+    argocd.argoproj.io/instance: gatekeeper
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    operations:
+      - "CREATE"
+      - "UPDATE"
+    exemptImages:
+      - docker.elastic.co/elasticsearch/elasticsearch
+      - jippi/pritunl
+      - k8s.gcr.io/kube-proxy
+      - longhornio/csi-node-driver-registrar
+      - longhornio/longhorn-engine
+      - longhornio/longhorn-instance-manager
+      - longhornio/longhorn-manager
+      - registry.k8s.io/ingress-nginx/controller
+      - registry.k8s.io/sig-storage/nfsplugin
+{{ end }}

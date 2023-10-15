@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+ name: elk-local
+ namespace: argocd
+ finalizers:
+   - resources-finalizer.argocd.argoproj.io
+spec:
+ ignoreDifferences:
+ - kind: Secret
+   namespace: elk
+   jsonPointers:
+   - /data
+ destination:
+   namespace: elk
+   server: https://kubernetes.default.svc
+ project: elk-local-test
+ source:
+   repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+   targetRevision: elk-local
+   path: argocd-local/manifest/elk/helm
+   helm:
+     releaseName: elk
+     version: v3
+     valueFiles:
+     - values-local.yaml
+ syncPolicy:
+   #automated:
+   #  selfHeal: true
+   #  prune: true
+   syncOptions:
+   - CreateNamespace=true
+   # - Replace=true # fix metadata.annotations: Too long
+   - ApplyOutOfSyncOnly=true
+   - FailOnSharedResource=true
+   - RespectIgnoreDifferences=true

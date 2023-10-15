@@ -1,0 +1,7 @@
+argocd-image-updater:
+  config:
+    logLevel: "debug"
+  extraArgs:
+    - --interval
+    - 30s
+  

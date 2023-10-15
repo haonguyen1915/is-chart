@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: test-test-test-test
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app: nginx-test
+ template:
+   metadata:
+     labels:
+       app: nginx-test
+   spec:
+     containers:
+       - name: nginx
+         securityContext:
+           {}
+         image: "nginx"
+         imagePullPolicy: Always
+         ports:
+           - name: http
+             containerPort: 80
+             protocol: TCP
+         resources:
+           limits:
+             memory: 50Mi
+           requests:
+             cpu: 50m
+             memory: 50Mi      

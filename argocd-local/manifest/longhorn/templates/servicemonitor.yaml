@@ -1,0 +1,21 @@
+{{- if .Values.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: longhorn-servicemonitor
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn-servicemonitor
+    argocd.argoproj.io/instance: longhorn-local
+  name: longhorn-servicemonitor
+  namespace: longhorn
+spec:
+  selector:
+    matchLabels:
+      app: longhorn-manager
+  endpoints:
+  - port: {{ .Values.serviceMonitor.endpoint.port }}
+    interval: {{ .Values.serviceMonitor.endpoint.interval }}
+    path: {{ .Values.serviceMonitor.endpoint.path }}
+{{ end }}

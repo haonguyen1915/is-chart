@@ -1,0 +1,190 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-green-active
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: blue-green
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-green-preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: blue-green
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blue-green-active
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/limit-connections: '10'
+    nginx.ingress.kubernetes.io/limit-rpm: '20'
+spec:
+  rules:
+  - host: nginx-test.local.ftech.ai
+    http:
+      paths:
+      - path: /
+        backend:
+          service: 
+            name: blue-green-active
+            port: 
+              number: 80
+        pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blue-green-preview
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    #nginx.ingress.kubernetes.io/configuration-snippet: |
+    #  rewrite "(?i)/preview(/|$)(.*)" /$2 break;
+    #nginx.ingress.kubernetes.io/whitelist-source-range: 14.232.166.121/32,113.20.108.35/32,118.70.125.152/32,113.160.224.57/32,118.69.70.245/32,118.69.61.27/32,115.73.208.235/32,192.168.0.0/16, 172.16.10.0/24
+spec:
+  rules:
+  - host: nginx.ftech.com.vn
+    http:
+      paths:
+      - path: /preview/
+        backend:
+          service: 
+            name: blue-green-preview
+            port: 
+              number: 80
+        pathType: Prefix
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: blue-green
+spec:
+  scaleTargetRef:
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: blue-green 
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue-green
+  labels:
+    app: blue-green
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: blue-green
+  template:
+    metadata:
+      annotations:
+        co.elastic.logs/module: nginx
+        co.elastic.logs/fileset.stdout: access
+        co.elastic.logs/fileset.stderr: error
+      labels:
+        app: blue-green
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: nginx
+          securityContext:
+            {}
+          #image: "cgr.dev/chainguard/nginx:latest"
+          #image: "registry.ftech.ai/is-test/nginx:local-2023-06-12_16-24-16-e0bd9041"
+          image: "nginx"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi      
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: blue-green
+spec:
+  #replicas: 2
+
+  selector:
+    matchLabels:
+      app: blue-green
+
+  workloadRef: 
+    apiVersion: apps/v1
+    kind: Deployment
+    name: blue-green
+
+  revisionHistoryLimit: 5 #default 10
+  strategy:
+    blueGreen: 
+      activeService: blue-green-active
+      previewService: blue-green-preview
+      previewReplicaCount: 1
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 60
+      scaleDownDelayRevisionLimit: 1
+
+      # Anti Affinity configuration between desired and previous ReplicaSet.
+      # Only one must be specified
+      #antiAffinity:
+      #  requiredDuringSchedulingIgnoredDuringExecution: {}
+      #  preferredDuringSchedulingIgnoredDuringExecution:
+      #    weight: 1 # Between 1 - 100
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blue-green-canary
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "70"
+    #nginx.ingress.kubernetes.io/configuration-snippet: |
+    #  rewrite "(?i)/preview(/|$)(.*)" /$2 break;
+    #nginx.ingress.kubernetes.io/whitelist-source-range: 14.232.166.121/32,113.20.108.35/32,118.70.125.152/32,113.160.224.57/32,118.69.70.245/32,118.69.61.27/32,115.73.208.235/32,192.168.0.0/16, 172.16.10.0/24
+spec:
+  rules:
+  - host: nginx-template.local.ftech.ai
+    http:
+      paths:
+      - path: /
+        backend:
+          service: 
+            name: nginx-nginx-test
+            port: 
+              number: 80
+        pathType: Prefix

@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: namtt
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    kubernetes.io/service-account.name: namtt
+  name: namtt-admin-role
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["get", "watch", "list", "create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    kubernetes.io/service-account.name: namtt
+  name: namtt-admin-crb
+subjects:
+- kind: ServiceAccount
+  name: namtt
+  namespace: "users"
+roleRef:
+  kind: ClusterRole
+  name: namtt-admin-role
+  apiGroup: rbac.authorization.k8s.io

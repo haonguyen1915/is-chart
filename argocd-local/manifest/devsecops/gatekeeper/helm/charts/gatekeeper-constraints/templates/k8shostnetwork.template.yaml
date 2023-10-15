@@ -1,0 +1,79 @@
+{{ if .Values.K8sHostNetwork.enabled }}
+---
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8shostnetwork
+  labels:
+    {{- include "gatekeeper-constraints.labels" . | nindent 4 }}
+  annotations:
+    metadata.gatekeeper.sh/title: "Host Network"
+    metadata.gatekeeper.sh/version: 1.0.0
+    description: >-
+      Controls usage of host network namespace by pod containers. Specific
+      ports must be specified. Corresponds to the `hostNetwork` and
+      `hostPorts` fields in a PodSecurityPolicy. For more information, see
+      https://kubernetes.io/docs/concepts/policy/pod-security-policy/#host-namespaces
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sHostNetwork
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            operations:
+              type: array
+              items:
+                type: string
+            exemptImages:
+              description: >-
+                Any container that uses an image that matches an entry in this list will be excluded
+                from enforcement.
+              type: array
+              items:
+                type: string
+
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8shostnetwork
+
+      import data.lib.k8shostnetwork.is_exempt
+      import future.keywords.in
+
+      input_pod := input.review.object
+
+      input_containers[c] {
+        c := input_pod.spec.containers[_]
+      }
+      input_containers[c] {
+        c := input_pod.spec.initContainers[_]
+      }
+      input_containers[c] {
+        c := input_pod.spec.ephemeralContainers[_]
+      }
+
+      violation[{"msg": msg, "details": {}}] {
+        input.review.operation in input.parameters.operations
+        c := input_containers[_]
+        not is_exempt(c)
+        input_pod.spec.hostNetwork
+        msg := sprintf("The specified hostNetwork are not allowed", [])
+      }
+
+    libs: 
+    - |
+      package lib.k8shostnetwork
+
+      import future.keywords.in
+
+      is_exempt(container) {
+        exempt_images := object.get(object.get(input, "parameters", {}), "exemptImages", [])
+        count(exempt_images) > 0
+        img := split(container.image, ":")[0]
+        img in exempt_images
+      }
+{{ end }}

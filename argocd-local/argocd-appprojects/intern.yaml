@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: intern
+  namespace: argocd
+spec:
+  roles:
+    - name: intern-view
+      policies:
+      - p, proj:intern:intern-view, applications, get, intern/*, allow
+      - p, proj:intern:intern-view, logs, get, intern/*, allow
+      - p, proj:intern:intern-view, applications, sync, intern/*, allow
+      - p, proj:intern:intern-view, applications, action/*/Pod/delete, intern/*, allow
+      groups:
+      - is.test@ftech.ai
+
+    #- name: intern-admin
+    #  policies:
+    #  - p, proj:intern:intern-admin, applications, get, intern/*, allow
+    #  - p, proj:intern:intern-admin, logs, get, intern/*, allow
+    #  groups:
+    #  - sondh2@ftech.ai
+
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  # namespaceResourceBlacklist:
+  # - group: '*'
+  #   kind: Role
+  # - group: '*'
+  #   kind: RoleBinding
+  destinations:
+  - namespace: '*'
+    server: '*'
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/intern/monitoring.git
+  

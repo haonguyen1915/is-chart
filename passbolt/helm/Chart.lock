@@ -1,0 +1,6 @@
+dependencies:
+- name: passbolt
+  repository: file://charts/passbolt
+  version: 0.4.1
+digest: sha256:24c5cf9dd4224c471e12d6e0999d7a205bd9e6efcd67d84502c2872022263733
+generated: "2023-08-14T14:58:20.0314154+07:00"

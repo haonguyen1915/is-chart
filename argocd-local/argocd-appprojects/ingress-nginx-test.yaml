@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ingress-nginx-test
+  namespace: argocd
+spec:
+  roles:
+    - name: ingress-nginx-test-admin
+      policies:
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, applications, get, ingress-nginx-test/*, allow
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, logs, get, ingress-nginx-test/*, allow
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, applications, sync, ingress-nginx-test/*, allow
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, applications, update, ingress-nginx-test/*, allow
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, applications, action/apps/DaemonSet/restart, ingress-nginx-test/*, allow
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, exec, create, ingress-nginx-test/*, allow
+      - p, proj:ingress-nginx-test:ingress-nginx-test-admin, applications, delete, ingress-nginx-test/*, allow
+      groups:
+      - trungnam23032001@gmail.com
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: ingress-nginx-test
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

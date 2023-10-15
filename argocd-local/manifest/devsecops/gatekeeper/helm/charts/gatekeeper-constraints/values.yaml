@@ -1,0 +1,46 @@
+K8sHostNamespace:
+  enabled: false
+  matchKinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  exemptImages: []
+    # - k8s.gcr.io/etcd
+
+K8sHostNetwork:
+  enabled: false
+  matchKinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  exemptImages: []
+    # - k8s.gcr.io/etcd
+
+K8sMountVolumeHostPath:
+  enabled: false
+  matchKinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  exemptImages: []
+    # - k8s.gcr.io/etcd
+
+K8sPrivilegedContainer:
+  enabled: false
+  matchKinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+  exemptImages: []
+    # - k8s.gcr.io/etcd
+
+K8sValidIngressPath:
+  enabled: false
+  matchKinds:
+    - apiGroups: ["*"]
+      kinds: ["Ingress"]
+  blockPartterns:
+    - '\s*alias\s*.*;'
+    - '\s*root\s*.*;'
+    - '(?s)\s*alias\s*.*;'
+    - '(?s)\s*root\s*.*;'
+    - '/etc/(passwd|shadow|group|nginx|ingress-controller)'
+    - '/var/run/secrets'
+    - '.*_by_lua.*'
+    - '.*blocked.*'

@@ -1,0 +1,12 @@
+externalSecrets:
+  create: true
+  vault:
+    server: "https://vault-raft.prod.ftech.ai"
+    auth:
+      kubernetes:
+        mountPath: "kubernetes-local"
+        role: "is-chart-regcred-ro"
+  dockerconfigjson:
+    path: secret/data/projects/is-chart/regcred
+imagePullSecrets:
+  - name: regcred-is-chart

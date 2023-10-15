@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-dev-test
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: devsecops
+    server: https://kubernetes.local2.ftech.ai
+  project: devsecops
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: master
+    path: kyverno/helm
+    helm:
+     releaseName: kyverno-dev-test
+     version: v3
+     valueFiles:
+     - values-local.yaml
+  syncPolicy:
+    #automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    - CreateNamespace=true
+    - ApplyOutOfSyncOnly=true
+    - FailOnSharedResource=true
+    - ServerSideApply=true

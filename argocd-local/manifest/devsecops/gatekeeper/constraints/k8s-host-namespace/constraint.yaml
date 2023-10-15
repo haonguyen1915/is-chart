@@ -1,0 +1,23 @@
+{{ if .Values.constraints.k8sHostNamespace }}
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sHostNamespace
+metadata:
+  name: k8s-host-namespace
+  labels:
+    argocd.argoproj.io/instance: gatekeeper
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    operations:
+      - "CREATE"
+      - "UPDATE"
+    exemptImages:
+      - longhornio/csi-node-driver-registrar
+      - longhornio/livenessprobe
+      - longhornio/longhorn-manager
+      - quay.io/prometheus/node-exporter
+{{ end }}

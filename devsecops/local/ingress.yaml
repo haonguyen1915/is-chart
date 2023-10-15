@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name:  ingress-openvpn
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: "https"
+    #nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    #nginx.ingress.kubernetes.io/configuration-snippet: |
+    #    if ($http_x_forwarded_proto = 'http') {
+    #      return 301 https://$host$request_uri;
+    #    }
+  labels:
+    owner: IS
+    pic: IS.sondh
+spec:
+  rules:
+  - host: openvpn.local.ftech.ai
+    http:
+      paths:
+      - backend:
+          service: 
+            name: openvpn
+            port: 
+              number: 943
+        pathType: Prefix
+        path: /

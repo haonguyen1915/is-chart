@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: openebs
+  namespace: argocd
+spec:
+  roles:
+    - name: openebs-admin
+      policies:
+      - p, proj:openebs:openebs-admin, applications, get, openebs/*, allow
+      - p, proj:openebs:openebs-admin, logs, get, openebs/*, allow
+      - p, proj:openebs:openebs-admin, applications, sync, openebs/*, allow
+      - p, proj:openebs:openebs-admin, applications, update, openebs/*, allow
+      groups:
+      - devops/is-intern-devops
+      - is.test@ftech.ai
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: openebs
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

@@ -1,0 +1,3 @@
+kyverno:
+  enabled: true
+  replicaCount: 3

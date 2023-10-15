@@ -1,0 +1,31 @@
+{{- if .Values.ingress.enabled -}}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  {{- with .Values.ingress.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: sonarqube
+    argocd.argoproj.io/instance: sonarqube-dev
+    chart: sonarqube-6.0.0_403
+    heritage: Helm
+    release: sonarqube
+    owner: IS
+    pic: IS.tiennh
+  name: sonarqube-sonarqube
+  namespace: devsecops
+spec:
+  rules:
+  {{- range $host := .Values.ingress.hosts }}
+    - host: {{ $host.name }}
+      http:
+        paths:
+          - backend:
+              serviceName: sonarqube-sonarqube
+              servicePort: 9000
+            path: {{ $host.path }}
+            pathType: {{ $host.pathType }}
+  {{ end -}}
+{{- end }}

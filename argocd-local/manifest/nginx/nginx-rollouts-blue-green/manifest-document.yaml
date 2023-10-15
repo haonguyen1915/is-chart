@@ -1,0 +1,295 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-green-active
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: blue-green
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-green-preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: blue-green
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blue-green-active
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: nginx-test.local.ftech.ai
+    http:
+      paths:
+      - path: /
+        backend:
+          service: 
+            name: blue-green-active
+            port: 
+              number: 80
+        pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blue-green-preview
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      rewrite "(?i)/preview(/|$)(.*)" /$2 break;
+    nginx.ingress.kubernetes.io/whitelist-source-range: 14.232.166.121/32,113.20.108.35/32,118.70.125.152/32,113.160.224.57/32,118.69.70.245/32,118.69.61.27/32,115.73.208.235/32,192.168.0.0/16, 172.16.10.0/24
+spec:
+  rules:
+  - host: nginx-test.local.ftech.ai
+    http:
+      paths:
+      - path: /preview/
+        backend:
+          service: 
+            name: blue-green-preview
+            port: 
+              number: 80
+        pathType: Prefix
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: blue-green
+spec:
+  scaleTargetRef:
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: blue-green 
+  minReplicas: 2
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue-green
+  labels:
+    app: blue-green
+spec:
+  replicas: 0
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: blue-green
+  template:
+    metadata:
+      labels:
+        app: blue-green
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: nginx
+          securityContext:
+            {}
+
+          #image: "nginx:latest"
+          #image: "nginx:1.16.0"
+          #image: "nginx:stable"
+          image: "registry.ftech.ai/is-test/nginx:local-481f45a3"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi      
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: blue-green
+spec:
+  # Number of desired pods.
+  # Defaults to 1.
+  replicas: 2
+
+  #analysis:
+    # limits the number of successful analysis runs and experiments to be stored in a history
+    # Defaults to 5.
+    #successfulRunHistoryLimit: 10
+    # limits the number of unsuccessful analysis runs and experiments to be stored in a history. 
+    # Stages for unsuccessful: "Error", "Failed", "Inconclusive"
+    # Defaults to 5.
+    #unsuccessfulRunHistoryLimit: 10
+
+  # Label selector for pods. Existing ReplicaSets whose pods are selected by
+  # this will be the ones affected by this rollout. It must match the pod
+  # template's labels.
+  selector:
+    matchLabels:
+      app: blue-green
+
+  # WorkloadRef holds a references to a workload that provides Pod template 
+  # (e.g. Deployment). If used, then do not use Rollout template property.
+  workloadRef: 
+    apiVersion: apps/v1
+    kind: Deployment
+    name: blue-green
+
+  # Template describes the pods that will be created. Same as deployment.
+  # If used, then do not use Rollout workloadRef property.
+  #template:
+  #  metadata:
+  #    labels:
+  #      app: blue-green
+  #  spec:
+  #    serviceAccountName: default
+  #    securityContext:
+  #      {}
+  #    containers:
+  #      - name: blue-green
+  #        securityContext:
+  #          {}
+  #        #image: "nginx:latest"
+  #        #image: "nginx:1.16.0"
+  #        image: "nginx:stable"
+  #        #image: "registry.ftech.ai/is-test/nginx:local-481f45a3"
+  #        imagePullPolicy: Always
+  #        ports:
+  #          - name: http
+  #            containerPort: 80
+  #            protocol: TCP
+  #        resources:
+  #          limits:
+  #            memory: 50Mi
+  #          requests:
+  #            cpu: 50m
+  #            memory: 50Mi      
+  #    imagePullSecrets:
+  #      - name: regcred
+
+  # Minimum number of seconds for which a newly created pod should be ready
+  # without any of its container crashing, for it to be considered available.
+  # Defaults to 0 (pod will be considered available as soon as it is ready)
+  #minReadySeconds: 30
+
+  # The number of old ReplicaSets to retain.
+  # Defaults to 10
+  revisionHistoryLimit: 1
+
+  # Pause allows a user to manually pause a rollout at any time. A rollout
+  # will not advance through its steps while it is manually paused, but HPA
+  # auto-scaling will still occur. Typically not explicitly set the manifest,
+  # but controlled via tools (e.g. kubectl argo rollouts pause). If true at
+  # initial creation of Rollout, replicas are not scaled up automatically
+  # from zero unless manually promoted.
+  #paused: true
+
+  # The maximum time in seconds in which a rollout must make progress during
+  # an update, before it is considered to be failed. Argo Rollouts will
+  # continue to process failed rollouts and a condition with a
+  # ProgressDeadlineExceeded reason will be surfaced in the rollout status.
+  # Note that progress will not be estimated during the time a rollout is
+  # paused.
+  # Defaults to 600s
+  #progressDeadlineSeconds: 600
+
+  # Whether to abort the update when ProgressDeadlineSeconds is exceeded.
+  # Optional and default is false.
+  #progressDeadlineAbort: false
+
+  # UTC timestamp in which a Rollout should sequentially restart all of
+  # its pods. Used by the `kubectl argo rollouts restart ROLLOUT` command.
+  # The controller will ensure all pods have a creationTimestamp greater
+  # than or equal to this value.
+  #restartAt: "2020-03-30T21:19:35Z"
+  strategy:
+    # Blue-green update strategy
+    blueGreen: 
+      # Reference to service that the rollout modifies as the active service.
+      # Required.
+      activeService: blue-green-active
+
+      # Name of the service that the rollout modifies as the preview service.
+      # +optional
+      previewService: blue-green-preview
+
+      # The number of replicas to run under the preview service before the
+      # switchover. Once the rollout is resumed the new ReplicaSet will be fully
+      # scaled up before the switch occurs +optional
+      previewReplicaCount: 1
+
+      # Pre-promotion analysis run which performs analysis before the service
+      # cutover. +optional
+      #prePromotionAnalysis:
+      #  templates:
+      #  - templateName: success-rate
+      #  args:
+      #  - name: service-name
+      #    value: guestbook-svc.default.svc.cluster.local
+
+      # Indicates if the rollout should automatically promote the new ReplicaSet
+      # to the active service or enter a paused state. If not specified, the
+      # default value is true. +optional
+      autoPromotionEnabled: false
+
+      # Automatically promotes the current ReplicaSet to active after the
+      # specified pause delay in seconds after the ReplicaSet becomes ready.
+      # If omitted, the Rollout enters and remains in a paused state until
+      # manually resumed by resetting spec.Paused to false. +optional
+      #autoPromotionSeconds: 15
+
+      # Post-promotion analysis run which performs analysis after the service
+      # cutover. +optional
+      #postPromotionAnalysis:
+      #  templates:
+      #  - templateName: success-rate
+      #  args:
+      #  - name: service-name
+      #    value: guestbook-svc.default.svc.cluster.local
+
+      # Adds a delay before scaling down the previous ReplicaSet. If omitted,
+      # the Rollout waits 30 seconds before scaling down the previous ReplicaSet.
+      # A minimum of 30 seconds is recommended to ensure IP table propagation
+      # across the nodes in a cluster.
+      scaleDownDelaySeconds: 60
+
+      # Limits the number of old RS that can run at once before getting scaled
+      # down. Defaults to nil
+      scaleDownDelayRevisionLimit: 1
+
+      # Add a delay in second before scaling down the preview replicaset
+      # if update is aborted. 0 means not to scale down. Default is 30 second
+      #abortScaleDownDelaySeconds: 30
+
+      # Anti Affinity configuration between desired and previous ReplicaSet.
+      # Only one must be specified
+      #antiAffinity:
+      #  requiredDuringSchedulingIgnoredDuringExecution: {}
+      #  preferredDuringSchedulingIgnoredDuringExecution:
+      #    weight: 1 # Between 1 - 100

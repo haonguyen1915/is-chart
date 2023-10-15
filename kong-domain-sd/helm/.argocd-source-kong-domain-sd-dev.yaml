@@ -1,0 +1,8 @@
+helm:
+  parameters:
+  - name: poly.apps.kong-domain-sd.image.repository
+    value: registry.ftech.ai/is-chart/kong-domain-sd
+    forcestring: true
+  - name: poly.apps.kong-domain-sd.image.tag
+    value: dev-2022-10-26_03-03-54-7cec74c2
+    forcestring: true

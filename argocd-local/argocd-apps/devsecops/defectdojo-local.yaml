@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: defectdojo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: devsecops
+    server: https://kubernetes.default.svc
+  project: devsecops
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: master
+    path: argocd-local/manifest/devsecops/defectdojo/helm
+    helm:
+     releaseName: defectdojo
+     version: v3
+     valueFiles:
+     - values-local.yaml
+  syncPolicy:
+    #automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    - CreateNamespace=true
+    - ApplyOutOfSyncOnly=true
+    - FailOnSharedResource=true

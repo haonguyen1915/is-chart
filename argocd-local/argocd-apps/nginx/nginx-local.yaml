@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nginx=registry.ftech.ai/is-test/nginx
+    argocd-image-updater.argoproj.io/nginx.allow-tags: regexp:^local-[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9a-zA-Z]+$
+    argocd-image-updater.argoproj.io/nginx.update-strategy: name
+    argocd-image-updater.argoproj.io/nginx.helm.image-name: poly.apps.nginx-test.image.name
+    argocd-image-updater.argoproj.io/nginx.helm.image-tag: poly.apps.nginx-test.image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/manifest
+    argocd-image-updater.argoproj.io/git-branch: master
+    argocd-image-updater.argoproj.io/nginx.pull-secret: pullsecret:nginx/regcred
+    # argocd-image-updater.argoproj.io/nginx.pull-secret: pullsecret:argocd/regcred-template
+    # argocd-image-updater.argoproj.io/nginx.pull-secret: secret:templates/regcred#.dockerconfigjson # success
+    # argocd-image-updater.argoproj.io/nginx.pull-secret: secret:argocd/regcred-nginx-2#dockerconfigjson2 # success
+  name: nginx-local
+  namespace: argocd
+spec:
+  destination:
+    namespace: nginx
+    server: https://kubernetes.default.svc
+  project: nginx
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: master
+    path: argocd-local/manifest/nginx/nginx-test/helm
+    helm:
+      releaseName: nginx
+      version: v3
+      valueFiles:
+      - values-local.yaml      
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true  
+    syncOptions:
+    - CreateNamespace=true

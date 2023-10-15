@@ -1,0 +1,95 @@
+# Default values for fbang-news.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+tcpIngress:
+  create: true
+
+tlsSecret:
+  create: true
+
+externalSecrets:
+  create: false
+  vault:
+    server: "https://vault-raft.prod.ftech.ai"
+    auth:
+      kubernetes:
+        mountPath: "kubernetes-local"
+        role: "argocd-templates-nginx-manifest-ro"
+  dockerconfigjson:
+    path: secret/data/projects/argocd/templates/nginx-manifest
+
+replicaCount: 1
+
+image:
+  repository: 'danghs/test' 
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "tcp"
+images:  
+  # privateRegistries: 
+  #   - key: ""
+  #     user: ""
+  #     password: ""
+  #     host: "abc"
+# externalSecret:
+#   provider:
+#     vault:
+#       server: "https://vault.tool.ftech.ai"
+#       auth:
+#         kubernetes:
+#           mountPath: "kubernetes-ai"
+#           role: "argocd-templates"  
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:  {}
+
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 12345
+  targetPort: 12345
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 1000m   
+  hosts:
+    - host: nginx-test.local.ftech.ai 
+      paths: [/]
+       
+resources:
+  limits:
+    cpu: 50m
+    memory: 50Mi
+  requests:
+    cpu: 50m
+    memory: 50Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

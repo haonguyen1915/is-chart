@@ -1,0 +1,19 @@
+{{- if .Values.tcpIngress.create -}}
+apiVersion: configuration.konghq.com/v1beta1
+kind: TCPIngress
+metadata:
+  name: nginx-tls
+  annotations:
+    kubernetes.io/ingress.class: kong
+spec:
+  tls:
+  - hosts:
+    - nginx-test.local.ftech.ai
+    secretName: nginx-test.local.ftech.ai
+  rules:
+  - host: nginx-test.local.ftech.ai
+    port: 8556
+    backend:
+      serviceName: nginx
+      servicePort: 12345
+{{- end }}

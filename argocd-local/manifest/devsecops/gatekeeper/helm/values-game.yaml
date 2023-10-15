@@ -1,0 +1,74 @@
+gatekeeper:
+  enabled: true
+
+gatekeeper-constraints:
+  enabled: true
+  K8sHostNamespace:
+    enabled: true
+    exemptImages:
+      - quay.io/prometheus/node-exporter
+
+  K8sHostNetwork:
+    enabled: true
+    exemptImages: 
+      - docker.io/library/nginx
+      - k8s.gcr.io/dns/k8s-dns-node-cache
+      - k8s.gcr.io/kube-apiserver
+      - k8s.gcr.io/kube-controller-manager
+      - k8s.gcr.io/kube-proxy
+      - k8s.gcr.io/kube-scheduler
+      - quay.io/calico/cni
+      - quay.io/calico/kube-controllers
+      - quay.io/calico/node
+      - quay.io/calico/pod2daemon-flexvol
+      - quay.io/prometheus/node-exporter
+      - registry.k8s.io/ingress-nginx/controller
+
+  K8sMountVolumeHostPath:
+    enabled: true
+    exemptImages:
+      - docker.elastic.co/beats/filebeat
+      - docker.io/library/nginx
+      - hashicorp/vault
+      - k8s.gcr.io/dns/k8s-dns-node-cache
+      - k8s.gcr.io/kube-apiserver
+      - k8s.gcr.io/kube-controller-manager
+      - k8s.gcr.io/kube-proxy
+      - k8s.gcr.io/kube-scheduler
+      - quay.io/calico/cni
+      - quay.io/calico/node
+      - quay.io/calico/pod2daemon-flexvol
+      - quay.io/prometheus/node-exporter
+      - registry.ftech.ai/game-city/cskh-vplay
+      - registry.ftech.ai/game-city/gmtools
+      - registry.ftech.ai/game-city/vina-cms-api
+      - registry.ftech.ai/game-city/vnp-portal-api/achievementservice
+      - registry.ftech.ai/game-city/vnp-portal-api/apigateway
+      - registry.ftech.ai/game-city/vnp-portal-api/authservice
+      - registry.ftech.ai/game-city/vnp-portal-api/profileservice
+      - registry.ftech.ai/game-city/vnp-portal-api/reportservice
+      - registry.ftech.ai/game-city/vnp-portal-api/servicetoken
+      - registry.ftech.ai/game-city/vtv-cms-api-ver02
+      - registry.ftech.ai/game-city/vtv-portal-api/achievementservice
+      - registry.ftech.ai/game-city/vtv-portal-api/apigateway
+      - registry.ftech.ai/game-city/vtv-portal-api/authservice
+      - registry.ftech.ai/game-city/vtv-portal-api/profileservice
+      - registry.ftech.ai/game-city/vtv-portal-api/reportservice
+      - registry.ftech.ai/is-chart/etcd-backup
+      - registry.ftech.ai/is-chart/pvc-exporter
+      - registry.ftech.ai/public/is-chart/vm-memory-exporter
+
+  K8sPrivilegedContainer:
+    enabled: true
+    exemptImages:
+      - docker.elastic.co/elasticsearch/elasticsearch
+      - jippi/pritunl
+      - k8s.gcr.io/dns/k8s-dns-node-cache
+      - k8s.gcr.io/kube-proxy
+      - quay.io/calico/cni
+      - quay.io/calico/node
+      - quay.io/calico/pod2daemon-flexvol
+      - registry.k8s.io/ingress-nginx/controller
+
+  K8sValidIngressPath:
+    enabled: true

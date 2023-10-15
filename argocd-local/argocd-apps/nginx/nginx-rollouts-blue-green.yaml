@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+  name: nginx-rollouts-blue-green
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: nginx
+    server: https://kubernetes.default.svc
+  project: nginx
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: master 
+    path: argocd-local/manifest/nginx/nginx-rollouts-blue-green/manifest/
+    directory:
+      recurse: true
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true  
+    syncOptions:
+    - CreateNamespace=true

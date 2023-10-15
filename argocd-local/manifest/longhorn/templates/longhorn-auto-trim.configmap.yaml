@@ -1,0 +1,15 @@
+{{- if .Values.autotrimcronjob.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: longhorn-auto-trim
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn-auto-trim
+    argocd.argoproj.io/instance: longhorn-local
+  name: longhorn-auto-trim-env
+  namespace: longhorn
+data:
+  {{- toYaml .Values.autotrimcronjob.config | nindent 2}}
+{{ end }}

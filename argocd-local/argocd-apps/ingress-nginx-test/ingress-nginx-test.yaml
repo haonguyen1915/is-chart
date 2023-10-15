@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx-test-local
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: ingress-nginx-test
+    server: https://kubernetes.default.svc
+  project: ingress-nginx-test
+  source:
+    repoURL: https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git
+    targetRevision: ingress-nginx-test
+    path: argocd-local/manifest/ingress-nginx-test
+    helm:
+      releaseName: ingress-nginx-test
+      version: v3
+      valueFiles:
+      - values-local.yaml
+  syncPolicy:
+    #automated:
+    #  selfHeal: true
+    #  prune: true
+    syncOptions:
+    - CreateNamespace=true
+    # - Replace=true # fix metadata.annotations: Too long
+    - ApplyOutOfSyncOnly=true
+    - FailOnSharedResource=true
+

@@ -1,0 +1,259 @@
+defectdojo:
+  enabled: true
+  fullnameOverride: defectdojo
+  # Global settings
+  # create defectdojo specific secret
+  createSecret: true
+  # create rabbitmq secret in defectdojo chart, outside of rabbitmq chart
+  createRabbitMqSecret: true
+  # create redis secret in defectdojo chart, outside of redis chart
+  createRedisSecret: false
+  # create mysql secret in defectdojo chart, outside of mysql chart
+  createMysqlSecret: false
+  # create postgresql secret in defectdojo chart, outside of postgresql chart
+  createPostgresqlSecret: true
+  ## Configuration value to select database type
+  ## Option to use "postgresql" or "mysql" database type, by default "mysql" is chosen
+  ## Set the "enable" field to true of the database type you select (if you want to use internal database) and false of the one you don't select
+  database: postgresql
+  host: defectdojo.local.ftech.ai
+  imagePullPolicy: Always
+  # Where to pull the defectDojo images from. Defaults to "defectdojo/*" repositories on hub.docker.com
+  repositoryPrefix: defectdojo
+  # When using a private registry, name of the secret that holds the registry secret (eg deploy token from gitlab-ci project)
+  # imagePullSecrets: defectdojoregistrykey
+  tag: latest
+  
+  securityContext:
+    enabled: True
+    djangoSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities: 
+        drop:
+          - ALL
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    nginxSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities: 
+        drop:
+          - ALL
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      
+
+
+  admin:
+    user: admin
+    password: admin
+    firstName: Administrator
+    lastName: User
+    mail: admin@defectdojo.local
+    secretKey:
+    credentialAes256Key:
+    metricsHttpAuthPassword:
+
+  monitoring:
+    enabled: false
+
+  annotations: {}
+
+  # Components
+  celery:
+    broker: rabbitmq
+    logLevel: INFO
+    beat:
+      annotations: {}
+      affinity: {}
+      nodeSelector: {}
+      replicas: 1
+  #    resources:
+  #      requests:
+  #        cpu: 100m
+  #        memory: 128Mi
+  #      limits:
+  #        cpu: 2000m
+  #        memory: 256Mi
+      tolerations: []
+    worker:
+      annotations: {}
+      affinity: {}
+      logLevel: INFO
+      nodeSelector: {}
+      replicas: 1
+  #    resources:
+  #      requests:
+  #        cpu: 100m
+  #        memory: 128Mi
+  #      limits:
+  #        cpu: 2000m
+  #        memory: 256Mi
+      tolerations: []
+      app_settings:
+        pool_type: solo
+        # Performance improved celery worker config when needing to deal with a lot of findings (e.g deduplication ops)
+        # Comment out the "solo" line, and uncomment the following lines.
+        # pool_type: prefork
+        # autoscale_min: 2
+        # autoscale_max: 8
+        # concurrency: 8
+        # prefetch_multiplier: 128
+
+  django:
+    annotations: {}
+    affinity: {}
+    ingress:
+      enabled: true
+      activateTLS: false
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+        #nginx.ingress.kubernetes.io/server-snippet: |
+        #  if ($remote_addr ~ "^(172.16.10.2)$") {
+        #    rewrite ^ https://baotri.fqa.vn;
+        #  }
+        #nginx.ingress.kubernetes.io/configuration-snippet: |
+        #  deny 172.16.10.2;
+      hosts:
+        - host: defectdojo.local.ftech.ai
+          paths:
+            path: /
+    nginx:
+      tls:
+        enabled: false
+        generateCertificate: false
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 1Gi
+    nodeSelector: {}
+    replicas: 1
+    tolerations: []
+    uwsgi:
+      livenessProbe:
+        timeoutSeconds: 20
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 1Gi
+      app_settings:
+        processes: 2
+        threads: 2
+
+  initializer:
+    run: true
+    keepSeconds: 60
+    affinity: {}
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+  
+  # rabbitmq:
+  #   enabled: true
+  #   replicas: 1
+  #   resources:
+  #     requests:
+  #       cpu: 100m
+  #       memory: 128Mi
+  #     limits:
+  #       memory: 256Mi
+  #   rabbitmq:
+  #     password: ""
+  #     erlangCookie: ""
+  #     existingPasswordSecret: defectdojo-rabbitmq-specific
+  #     existingErlangSecret: defectdojo-rabbitmq-specific
+  #     affinity: {}
+  #     nodeSelector: {}
+
+  postgresql:
+    enabled: true
+    image:
+      tag: 11.16.0-debian-11-r9
+    auth:
+      username: defectdojo
+      password: "defectdojo"
+      database: defectdojo
+      existingSecret: defectdojo-postgresql-specific
+      secretKeys:
+        adminPasswordKey: postgresql-postgres-password
+        userPasswordKey: postgresql-password
+        replicationPasswordKey: postgresql-replication-password
+    architecture: standalone
+    primary:
+      name: primary
+      persistence:
+        enabled: true
+      service:
+        ports:
+          postgresql: 5432
+      podSecurityContext:
+        enabled: true
+      containerSecurityContext:
+        # Default is true for K8s. Enabled needs to false for OpenShift restricted SCC and true for anyuid SCC
+        enabled: true
+        allowPrivilegeEscalation: false
+        capabilities: 
+          drop:
+            - ALL
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      affinity: {}
+      nodeSelector: {}
+    volumePermissions:
+      enabled: false
+      # if using restricted SCC set runAsUser: "auto" and if running under anyuid SCC - runAsUser needs to match the line above
+      containerSecurityContext:
+        runAsUser: 1001
+    shmVolume:
+      chmod:
+        enabled: false
+  rabbitmq:
+    enabled: true
+    replicaCount: 1
+    auth:
+      password: ""
+      erlangCookie: ""
+      existingPasswordSecret: defectdojo-rabbitmq-specific
+      secretPasswordKey: ""
+      existingErlangSecret: defectdojo-rabbitmq-specific
+    memoryHighWatermark:
+      enabled: true
+      type: relative
+      value: 0.5
+    affinity: {}
+    nodeSelector: {}
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2
+        memory: 1Gi
+    livenessProbe:
+      timeoutSeconds: 90
+    readinessProbe:
+      timeoutSeconds: 90
+    podSecurityContext:
+      enabled: true
+      fsGroup: 1001
+    containerSecurityContext:
+      enabled: true
+      allowPrivilegeEscalation: false
+      capabilities: 
+        drop:
+          - ALL
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+  

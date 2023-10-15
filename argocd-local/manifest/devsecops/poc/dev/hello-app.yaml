@@ -1,0 +1,104 @@
+---
+# Source: monitoring/charts/poly/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-app
+  labels:
+    helm.sh/chart: hello-app-0.1.0
+    app: "hello-app"
+    owner: "is"
+    pic: "IS.namtt"
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+---
+# Source: monitoring/charts/poly/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-app
+  labels:
+    helm.sh/chart: hello-app-0.1.0
+    app: "hello-app"
+    owner: "is"
+    pic: "IS.namtt"
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+spec:
+  replicas: 1
+  strategy:
+    type: "RollingUpdate"
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hello-app
+      app.kubernetes.io/instance: "hello-app"
+  template: 
+    metadata:
+      name: hello-app
+      labels:
+        app.kubernetes.io/name: hello-app
+        app.kubernetes.io/instance: "hello-app"    
+        app: "hello-app"
+        owner: "is"
+        pic: "IS.namtt"    
+    spec:
+      serviceAccountName: default
+      securityContext: 
+        {}
+      containers:
+        - name: hello-app
+          securityContext:
+            {}
+          image: "gcr.io/google-samples/hello-app:2.0"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: "http"
+              containerPort: 8080
+              protocol: "TCP"      
+          livenessProbe: 
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe: 
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          startupProbe: 
+            failureThreshold: 30
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          lifecycle:
+            preStop: 
+              exec:
+                command:
+                - /bin/bash
+                - -c
+                - sleep 10
+          resources: 
+            {}

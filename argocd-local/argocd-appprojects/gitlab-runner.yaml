@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gitlab-runner-test
+  namespace: argocd
+spec:
+  roles:
+    - name: gitlab-runner-test-admin
+      policies:
+      - p, proj:gitlab-runner-test:gitlab-runner-test-admin, applications, get, gitlab-runner-test/*, allow
+      - p, proj:gitlab-runner-test:gitlab-runner-test-admin, logs, get, gitlab-runner-test/*, allow
+      - p, proj:gitlab-runner-test:gitlab-runner-test-admin, applications, sync, gitlab-runner-test/*, allow
+      - p, proj:gitlab-runner-test:gitlab-runner-test-admin, applications, update, gitlab-runner-test/*, allow
+      - p, proj:gitlab-runner-test:gitlab-runner-test-admin, exec, create, gitlab-runner-test/*, allow
+      groups:
+      - devops/is-intern-devops
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+
+  destinations:
+  - namespace: gitlab-runner-test
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

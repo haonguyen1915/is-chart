@@ -1,0 +1,27 @@
+controller:
+  config:
+    compute-full-forwarded-for: true
+    enable-real-ip: true
+    keep-alive: 180
+    upstream-keepalive-timeout: 180
+    use-forwarded-headers: true
+    http-redirect-code: "301"
+    annotation-value-word-blocklist: "load_module,lua_package,_by_lua,root,proxy_pass,serviceaccount"
+  ingressClass: nginx-test
+  kind: DaemonSet
+  service:
+    type: ClusterIP
+  daemonset:
+    hostPorts:
+      http: 80
+      https: 443
+    useHostPort: true
+  hostNetwork: true
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/port: "10254"
+        prometheus.io/scrape: "true"
+    serviceMonitor:
+      enabled: true

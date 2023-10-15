@@ -1,0 +1,32 @@
+{{ if .Values.constraints.k8sHostNetwork }}
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sHostNetwork
+metadata:
+  name: k8s-host-network
+  labels:
+    argocd.argoproj.io/instance: gatekeeper
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    operations:
+      - "CREATE"
+      - "UPDATE"
+    exemptImages:
+      - docker.elastic.co/beats/metricbeat
+      - k8s.gcr.io/etcd
+      - k8s.gcr.io/kube-apiserver
+      - k8s.gcr.io/kube-controller-manager
+      - k8s.gcr.io/kube-proxy
+      - k8s.gcr.io/kube-scheduler
+      - quay.io/coreos/flannel
+      - quay.io/prometheus/node-exporter
+      - registry.k8s.io/ingress-nginx/controller
+      - registry.k8s.io/sig-storage/csi-node-driver-registrar
+      - registry.k8s.io/sig-storage/csi-provisioner
+      - registry.k8s.io/sig-storage/livenessprobe
+      - registry.k8s.io/sig-storage/nfsplugin
+{{ end }}

@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: openvpn
+    app.kubernetes.io/name: openvpn
+    owner: is
+    pic: IS.sondh
+  name: openvpn
+  namespace: devsecops
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: openvpn
+      app.kubernetes.io/name: openvpn
+      owner: openvpn
+      pic: IS.sondh
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: openvpn
+        app.kubernetes.io/name: openvpn
+        owner: openvpn
+        pic: IS.sondh
+      name: openvpn
+    spec:
+      containers:
+        - image: 'ghcr.io/linuxserver/openvpn-as'
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/London"
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "printf 'tUR(jIs65g733G*^\ntUR(jIs65g733G*^' | passwd admin"]
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - '-c'
+                  - sleep 10
+          name: openvpn
+          ports:
+            - containerPort: 943
+              name: https
+              protocol: TCP
+            - containerPort: 9443
+              name: https2
+              protocol: TCP
+            - containerPort: 1194
+              name: udp
+              protocol: UDP
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+      #volumes: 
+      #  - name: dso-volume
+      #    persistentVolumeClaim:
+      #      claimName: dso-volume
+      #securityContext:
+      #  runAsUser: 0
+      #  runAsGroup: 0
+      #  fsGroup: 0
+      terminationGracePeriodSeconds: 30
+---

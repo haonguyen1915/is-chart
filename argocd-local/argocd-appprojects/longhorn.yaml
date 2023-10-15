@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: longhorn
+  namespace: argocd
+spec:
+  roles:
+    - name: longhorn-admin
+      policies:
+      - p, proj:longhorn:longhorn-admin, applications, get, longhorn/*, allow
+      - p, proj:longhorn:longhorn-admin, logs, get, longhorn/*, allow
+      - p, proj:longhorn:longhorn-admin, applications, sync, longhorn/*, allow
+      - p, proj:longhorn:longhorn-admin, applications, update, longhorn/*, allow
+      groups:
+      - devops/is-intern-devops
+      - is.test@ftech.ai
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: longhorn
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

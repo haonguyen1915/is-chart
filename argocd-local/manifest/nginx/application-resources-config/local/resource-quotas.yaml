@@ -1,0 +1,11 @@
+#https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/quota-memory-cpu-namespace/
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: nginx-resource-quota
+spec:
+  hard:
+    limits.memory: 100Gi 
+    pods: "30"
+    requests.memory: 100Gi
+    requests.cpu: '10'

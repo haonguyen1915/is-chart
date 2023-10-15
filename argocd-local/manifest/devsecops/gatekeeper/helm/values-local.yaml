@@ -1,0 +1,79 @@
+gatekeeper:
+  enabled: true
+
+gatekeeper-constraints:
+  enabled: true
+  K8sHostNamespace:
+    enabled: true
+    exemptImages:
+      - longhornio/csi-node-driver-registrar
+      - longhornio/livenessprobe
+      - longhornio/longhorn-manager
+      - quay.io/prometheus/node-exporter
+
+  K8sHostNetwork:
+    enabled: true
+    exemptImages: 
+      - docker.elastic.co/beats/metricbeat
+      - k8s.gcr.io/etcd
+      - k8s.gcr.io/kube-apiserver
+      - k8s.gcr.io/kube-controller-manager
+      - k8s.gcr.io/kube-proxy
+      - k8s.gcr.io/kube-scheduler
+      - quay.io/coreos/flannel
+      - quay.io/prometheus/node-exporter
+      - registry.k8s.io/ingress-nginx/controller
+      - registry.k8s.io/sig-storage/csi-node-driver-registrar
+      - registry.k8s.io/sig-storage/csi-provisioner
+      - registry.k8s.io/sig-storage/livenessprobe
+      - registry.k8s.io/sig-storage/nfsplugin
+
+  K8sMountVolumeHostPath:
+    enabled: true
+    exemptImages:
+      - docker.elastic.co/beats/filebeat
+      - docker.elastic.co/beats/journalbeat
+      - docker.elastic.co/beats/metricbeat
+      - hashicorp/vault
+      - k8s.gcr.io/etcd
+      - k8s.gcr.io/kube-apiserver
+      - k8s.gcr.io/kube-controller-manager
+      - k8s.gcr.io/kube-proxy
+      - k8s.gcr.io/kube-scheduler
+      - longhornio/csi-attacher
+      - longhornio/csi-node-driver-registrar
+      - longhornio/csi-provisioner
+      - longhornio/csi-resizer
+      - longhornio/csi-snapshotter
+      - longhornio/livenessprobe
+      - longhornio/longhorn-engine
+      - longhornio/longhorn-instance-manager
+      - longhornio/longhorn-manager
+      - quay.io/coreos/flannel
+      - quay.io/prometheus/node-exporter
+      - registry.ftech.ai/ftech-fingerprint/fingersprint-api
+      - registry.ftech.ai/is-chart/etcd-backup
+      - registry.ftech.ai/is-chart/pvc-exporter
+      - registry.ftech.ai/platform/fingerprint-notify
+      - registry.ftech.ai/platform/fingersprint-api
+      - registry.ftech.ai/platform/hcns-cms
+      - registry.k8s.io/sig-storage/csi-node-driver-registrar
+      - registry.k8s.io/sig-storage/csi-provisioner
+      - registry.k8s.io/sig-storage/livenessprobe
+      - registry.k8s.io/sig-storage/nfsplugin
+
+  K8sPrivilegedContainer:
+    enabled: true
+    exemptImages:
+      - docker.elastic.co/elasticsearch/elasticsearch
+      - jippi/pritunl
+      - k8s.gcr.io/kube-proxy
+      - longhornio/csi-node-driver-registrar
+      - longhornio/longhorn-engine
+      - longhornio/longhorn-instance-manager
+      - longhornio/longhorn-manager
+      - registry.k8s.io/ingress-nginx/controller
+      - registry.k8s.io/sig-storage/nfsplugin
+
+  K8sValidIngressPath:
+    enabled: true

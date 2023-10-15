@@ -1,0 +1,58 @@
+{{ if .Values.constraints.k8sValidIngressPath }}
+---
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8svalidingresspath
+  labels:
+    argocd.argoproj.io/instance: gatekeeper
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sValidIngressPath
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            operations:
+              type: array
+              items:
+                type: string
+            blockPartterns:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8svalidingresspath
+
+        import future.keywords.contains
+        import future.keywords.if 
+        import future.keywords.in
+
+        # Ensure that resource kind is Ingress and request operation is CREATE or UPDATE
+        is_ingress if {
+          input.review.kind.kind == "Ingress"
+          input.review.operation in input.parameters.operations
+        }
+
+        # Get all paths in manifest
+        paths contains input.review.object.spec.rules[_].http.paths[_].path if is_ingress
+
+        # Get all invalid path
+        invalid_paths contains path if {
+          some path in paths
+          some block_parttern in input.parameters.blockPartterns
+          regex.match(block_parttern, path)
+        }
+
+        violation[{"msg": msg}] {
+          is_ingress
+          count(invalid_paths) > 0
+          invalid_paths_msg := concat(", ", invalid_paths)
+          msg := sprintf("Invalid paths found: %v", [invalid_paths_msg])
+        }
+{{ end }}

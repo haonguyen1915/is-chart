@@ -1,0 +1,63 @@
+poly:
+  apps:
+    kali-nessus-cracked:
+      enabled: true
+      global:
+        nameOverride: kali-nessus-cracked
+        extraSelectorLabels:
+          owner: IS
+          pic: IS.sondh
+      chart:
+        name: "kali-nessus-cracked"
+        version: "1.0.0"
+      deploy:
+        replicaCount: 1
+        revisionHistoryLimit: 3
+      image:
+        repository: registry.ftech.ai/is-chart/kali-nessus-cracked
+        pullPolicy: IfNotPresent
+        imagePullSecrets: 
+          - name: regcred-is-chart
+      container:
+        command: ["/bin/sh", "-c"]
+        runtimeArgs: ["sleep infinity"]
+        ports:
+          - containerPort: 11127
+        probes:
+          livenessProbe:
+            exec:
+              command:
+              - uname -a
+            periodSeconds: 5
+            failureThreshold: 10
+          readinessProbe:
+            exec:
+              command:
+              - uname -a
+            successThreshold: 1
+            periodSeconds: 5
+          startupProbe:
+            exec:
+              command:
+              - uname -a
+            failureThreshold: 10
+            periodSeconds: 5
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 5"]
+        resources:
+          limits:
+            memory: 4Gi
+          requests:
+            cpu: 100m
+            memory: 4Gi
+      service:
+        ports:
+          - port: 11127
+      ingress:
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: nginx
+        hosts:
+          - host: nessus.local.ftech.ai

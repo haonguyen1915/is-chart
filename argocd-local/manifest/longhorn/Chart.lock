@@ -1,0 +1,9 @@
+dependencies:
+- name: longhorn
+  repository: https://charts.longhorn.io
+  version: 1.4.0
+- name: longhorn-auto-trim
+  repository: oci://registry.ftech.ai/is-chart
+  version: 1.0.1
+digest: sha256:b82de7983221be15e0200a8a529bad7f5f56ca1c70f905e5b6587306fe39e4e0
+generated: "2023-06-15T14:30:12.32521377+07:00"

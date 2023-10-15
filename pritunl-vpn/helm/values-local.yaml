@@ -1,0 +1,24 @@
+pritunl-vpn:
+  image:
+    repository: jippi/pritunl
+    tag: 1.30.3413.7
+    pullPolicy: IfNotPresent
+  service: 
+    type: NodePort
+    port: 30194
+    nodePort: 30194
+  mongodb:
+    enabled: false
+    auth:
+      enabled: false
+  ingress:
+    enabled: true
+    pathType: Prefix 
+    hostname: vpn.local.ftech.ai
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "https"
+      # nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+    tls: false
+    selfSigned: false

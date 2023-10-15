@@ -1,0 +1,6 @@
+dependencies:
+- name: pritunl
+  repository: file://charts/pritunl
+  version: 0.2.3
+digest: sha256:6677782e020ebfb253321f7096dd0767ad06729e9824d11b485ab65668728881
+generated: "2023-08-18T17:05:57.7493424+07:00"

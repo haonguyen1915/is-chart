@@ -1,0 +1,27 @@
+{{ if .Values.constraints.k8sValidIngressPath }}
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sValidIngressPath
+metadata:
+  name: k8s-valid-ingress-path
+  labels:
+    argocd.argoproj.io/instance: gatekeeper
+spec:
+  match:
+    kinds:
+      - apiGroups: ["*"]
+        kinds: ["Ingress"]
+  parameters:
+    operations:
+      - "CREATE"
+      - "UPDATE"
+    blockPartterns:
+      - '\s*alias\s*.*;'
+      - '\s*root\s*.*;'
+      - '(?s)\s*alias\s*.*;'
+      - '(?s)\s*root\s*.*;'
+      - '/etc/(passwd|shadow|group|nginx|ingress-controller)'
+      - '/var/run/secrets'
+      - '.*_by_lua.*'
+      - '.*blocked.*'
+{{ end }}

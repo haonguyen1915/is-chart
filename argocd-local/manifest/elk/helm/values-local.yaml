@@ -1,0 +1,187 @@
+elasticsearch:
+  enabled: true
+  nameOverride: elasticsearch
+  volumeClaimTemplate:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 100Gi
+  secret:
+    enabled: true
+    password: "O5qOB5To01vNMmojxa"
+  resources:
+    requests:
+      memory: "2Gi"
+    limits:
+      memory: "2Gi"
+  lifecycle:
+    postStart:
+      exec:
+        command:
+          - bash
+          - -c
+          - |
+            #!/bin/bash
+            ES_URL=http://localhost:9200
+            TEMPLATE_NAME=k8s-7days-log
+            INDEX_PATTERN="k8s_*"
+            ILM_NAME=k8s-7days-log
+            ILM_WARM_AGE=5d
+            ILM_DELETE_AGE=7d
+            TEMPLATE_BODY=$(cat << EOF
+            {
+              "index_patterns": ["$INDEX_PATTERN"],
+              "template": {
+                "settings": {
+                  "index.lifecycle.name": "${ILM_NAME}",
+                  "index.refresh_interval": "5s",
+                  "index.max_docvalue_fields_search": 200
+                }
+              }
+            }
+            EOF
+            )
+            ILM_BODY=$(cat << EOF
+            {
+              "policy": {
+                "phases": {
+                  "hot": {
+                    "min_age": "0ms",
+                    "actions": {
+                      "set_priority": {
+                        "priority": 100
+                      }
+                    }
+                  },
+                  "warm": {
+                    "min_age": "$ILM_WARM_AGE",
+                    "actions": {
+                      "forcemerge": {
+                        "max_num_segments": 1
+                      },
+                      "set_priority": {
+                        "priority": 50
+                      },
+                      "shrink": {
+                        "number_of_shards": 1
+                      }
+                    }
+                  },
+                  "delete": {
+                    "min_age": "$ILM_DELETE_AGE",
+                    "actions": {
+                      "delete": {
+                        "delete_searchable_snapshot": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            EOF
+            )
+            while [[ "$(curl -s -o /dev/null -w '%{http_code}\n' $ES_URL)" != "200" ]]; do sleep 1; done
+            curl -X PUT "$ES_URL/_ilm/policy/$ILM_NAME" \
+              -H 'Content-Type: application/json' \
+              -d "$ILM_BODY"
+            curl -X PUT "$ES_URL/_index_template/$TEMPLATE_NAME" \
+              -H 'Content-Type: application/json' \
+              -d "$TEMPLATE_BODY"
+logstash:
+  enabled: true
+  fullnameOverride: logstash-logstash
+  antiAffinity: "soft"
+  logstashConfig:
+    logstash.yml: |
+      http.host: "0.0.0.0"
+      xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch-master:9200" ]
+  logstashPipeline:
+    logstash.conf: |
+      input {
+          beats {
+              port => "5044"
+        }
+      }
+      output {
+        elasticsearch {
+          hosts => ["elasticsearch-master:9200"]
+          index => "k8s_%{+YYYY.MM.dd}"
+          }
+      }
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "2Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2.5Gi"
+  service:
+    annotations: {}
+    type: ClusterIP
+    ports:
+      - name: beats
+        port: 5044
+        protocol: TCP
+        targetPort: 5044
+      - name: http
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+kibana:
+  enabled: true
+  nameOverride: kibana
+filebeat:
+  enabled: true
+  fullnameOverride: filebeat-filebeat
+  daemonset:
+    filebeatConfig:
+      filebeat.yml: |
+        filebeat.inputs:
+        - type: container
+          paths:
+            - /var/log/containers/*.log
+          scan_frequency: 10s
+          processors:
+          - add_kubernetes_metadata:
+              host: ${NODE_NAME}
+              matchers:
+              - logs_path:
+                  logs_path: "/var/log/containers/"
+        # setup.ilm.enabled: false
+        # setup.template.enabled: true
+        # setup.template.name: "k8s-%{[agent.version]}"
+        # setup.template.pattern: "k8s-%{[agent.version]}-*"
+        # setup.template.settings:
+        #   index.number_of_shards: 1
+        # setup.template.settings.index.lifecycle.rollover_alias: "k8s-%{[agent.version]}"
+        # output.elasticsearch:
+        #   hosts: ['elasticsearch-master:9200']
+        #   index: "k8s-%{[agent.version]}-%{+yyyy.MM.dd}"
+        output.logstash:
+          hosts: ['logstash-logstash:5044']
+prometheus-elasticsearch-exporter:
+  enabled: true
+  es:
+    ## Address (host and port) of the Elasticsearch node we should connect to.
+    ## This could be a local node (localhost:9200, for instance), or the address
+    ## of a remote Elasticsearch server. When basic auth is needed,
+    ## specify as: <proto>://<user>:<password>@<host>:<port>. e.g., http://admin:pass@localhost:9200.
+    ##
+    uri: http://elasticsearch-master.elk-xpack:9200
+  serviceMonitor:
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator
+  ##
+    enabled: true
+    #  namespace: monitoring
+    labels: {}
+    interval: 10s
+    jobLabel: ""
+    scrapeTimeout: 10s
+    scheme: http
+    relabelings: []
+    targetLabels: []
+    metricRelabelings: []
+    sampleLimit: 0
+
+    

@@ -1,0 +1,5 @@
+**/values/
+**/out.yaml
+**/values.yaml
+**/charts/kafka
+**/charts/feast-feature-server

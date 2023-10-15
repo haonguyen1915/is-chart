@@ -1,0 +1,28 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: fschool-cms-api-579-production
+  name: fschool-cms-api-579-production-reader
+rules:
+- apiGroups: ["*"] # "" indicates the core API group
+  resources: ["*"]
+  verbs:
+    - get
+    - list
+    - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tientt-fschool-cms-api-579-production-reader
+  namespace: fschool-cms-api-579-production
+subjects:
+# You can specify more than one "subject"
+- kind: ServiceAccount
+  name: tientt # "name" is case sensitive
+  namespace: "iam"
+roleRef:
+  kind: Role 
+  name: fschool-cms-api-579-production-reader
+  apiGroup: rbac.authorization.k8s.io

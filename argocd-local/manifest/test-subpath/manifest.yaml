@@ -1,0 +1,151 @@
+---
+# Source: test-subpath/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-test-subpath-active
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: test-subpath
+    app.kubernetes.io/instance: argocd
+---
+# Source: test-subpath/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-test-subpath-preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: test-subpath-2
+---
+# Source: test-subpath/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-test-subpath
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: test-subpath
+      app.kubernetes.io/instance: argocd
+      app: argocd-test-subpath
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: test-subpath
+        app.kubernetes.io/instance: argocd
+        app: argocd-test-subpath
+    spec:
+      serviceAccountName: default
+      securityContext:
+        {}
+      containers:
+        - name: test-subpath
+          securityContext:
+            {}
+          #image: "argoproj/rollouts-demo:blue"
+          image: "nginx:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi      
+---
+# Source: test-subpath/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-test-subpath-2
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: test-subpath-2
+      app: argocd-test-subpath-2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: test-subpath-2
+        app: argocd-test-subpath-2
+    spec:
+      serviceAccountName: default
+      securityContext:
+        {}
+      containers:
+        - name: test-subpath
+          securityContext:
+            {}
+          image: "argoproj/rollouts-demo:yellow"
+          #image: "nginx:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi      
+      imagePullSecrets:
+        - name: regcred
+---
+# Source: nginx/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-subpath-active
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: nginx-test-preview.local.ftech.ai
+    http:
+      paths:
+      - path: /
+        backend:
+          service: 
+            name: argocd-test-subpath-active
+            port: 
+              number: 80
+        pathType: Prefix
+---
+# Source: nginx/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-subpath-preview
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      rewrite "(?i)/preview(/|$)(.*)" /$2 break;
+spec:
+  rules:
+  - host: nginx-test-preview.local.ftech.ai
+    http:
+      paths:
+      - path: /preview/
+        backend:
+          service: 
+            name: argocd-test-subpath-preview
+            port: 
+              number: 80
+        pathType: Prefix

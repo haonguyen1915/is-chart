@@ -1,0 +1,34 @@
+{{- if .Values.autotrimcronjob.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/instance: longhorn-auto-trim
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn-auto-trim
+    argocd.argoproj.io/instance: longhorn-local
+  name: longhorn-auto-trim
+  namespace: longhorn
+spec:
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: longhorn-auto-trim
+            app.kubernetes.io/name: longhorn-auto-trim
+            owner: IS
+            pic: IS.namtt
+          name: longhorn-auto-trim
+        spec:
+          containers:
+            - name: longhorn-auto-trim
+              image: {{ .Values.autotrimcronjob.image }}
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: longhorn-auto-trim-env
+          restartPolicy: OnFailure
+  schedule: {{ .Values.autotrimcronjob.schedule | quote }}
+{{ end }}

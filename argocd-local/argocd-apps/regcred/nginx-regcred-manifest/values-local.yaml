@@ -1,0 +1,12 @@
+externalSecrets:
+  create: true
+  vault:
+    server: "https://vault-raft.prod.ftech.ai"
+    auth:
+      kubernetes:
+        mountPath: "kubernetes-local"
+        role: "argocd-templates-nginx-manifest-ro"
+  dockerconfigjson:
+    path: secret/data/projects/argocd/templates/nginx-manifest
+imagePullSecrets:
+  - name: regcred
